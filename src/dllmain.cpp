@@ -87,26 +87,6 @@ static bool UnblockHackEnabled;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 typedef void*   (__cdecl *fSharedApplication)();
 typedef void    (__thiscall *fSetAnimationInterval)(void *instance, double delay);
 fSharedApplication sharedApplication;
@@ -278,6 +258,77 @@ void loadHacks(){
 
 	FPSBypassEnabled = ini.GetBoolValue("fps-bypass","FPSBypassEnabled");
 	interval = (float)ini.GetDoubleValue("fps-bypass","TargetFPS");
+
+	IconsEnabled  = ini.GetBoolValue("bypass", "");
+	TextLengthEnabled = ini.GetBoolValue("bypass", "");
+	CharacterFilterEnabled = ini.GetBoolValue("bypass", "");
+	SliderLimitEnabled = ini.GetBoolValue("bypass", "");
+	MainLevelsEnabled = ini.GetBoolValue("bypass", "");
+	GuardVaultEnabled = ini.GetBoolValue("bypass", "");
+	KeymasterVaultEnabled = ini.GetBoolValue("bypass", "");
+	KeymasterBasementEnabled = ini.GetBoolValue("bypass", "");
+	BasementKeyBypassEnabled = ini.GetBoolValue("bypass", "");
+	ChallengeBypassEnabled = ini.GetBoolValue("bypass", "");
+	TreasureRoomEnabled = ini.GetBoolValue("bypass", "");
+	PotborShopEnabled = ini.GetBoolValue("bypass", "");
+	ScratchShopEnabled = ini.GetBoolValue("bypass", "");
+	FreeShopItemsEnabled = ini.GetBoolValue("bypass", "");
+	GatekeeperVaultEnabled = ini.GetBoolValue("bypass", "");
+	BackupStarsLimitEnabled = ini.GetBoolValue("bypass", "");
+	UnblockHackEnabled = ini.GetBoolValue("bypass", "");
+
+	/* 	ImGui::Checkbox("Icons", &IconsEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Unlocks all icons.");
+	ImGui::Checkbox("Text Length", &TextLengthEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Allows for unlimited text length in text inputs.");
+	ImGui::Checkbox("Character Filter", &CharacterFilterEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Lets you input any character in all text inputs.");
+	ImGui::Checkbox("Slider Limit", &SliderLimitEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Lets sliders be dragged beyond the visible limit.");
+	ImGui::Checkbox("Main Levels", &MainLevelsEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Unlocks locked demon levels.");
+	ImGui::Checkbox("Guard Vault", &GuardVaultEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Unlocks the guard's vault.");
+	ImGui::Checkbox("Keymaster Vault", &KeymasterVaultEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Unlocks the keymaster's vault.");
+	ImGui::Checkbox("Keymaster Basement", &KeymasterBasementEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Unlocks the keymaster's basement.");
+	ImGui::Checkbox("Basement Key Bypass", &BasementKeyBypassEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Lets you unlock the locks in the basement.");
+	ImGui::Checkbox("Challenge Bypass", &ChallengeBypassEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Unlocks 'The Challenge' level.");
+	ImGui::Checkbox("Treasure Room", &TreasureRoomEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Unlocks the treasure room.");
+	ImGui::Checkbox("Potbor Shop", &PotborShopEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Unlocks Potbor's shop in the treasure room.");
+	ImGui::Checkbox("Scratch Shop", &ScratchShopEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Unlocks Scratch's shop in the treasure room.");
+	ImGui::Checkbox("Free Shop Items", &FreeShopItemsEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Allows all shop items to be bought for 0 mana orbs.");
+	ImGui::Checkbox("Gatekeeper Vault", &GatekeeperVaultEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Unlocks the Gatekeeper's vault.");
+	ImGui::Checkbox("Backup Stars Limit", &BackupStarsLimitEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Lets you backup data, even with less than 10 stars.");
+	ImGui::Checkbox("Unblock Hack", &UnblockHackEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Lets you view profiles of users who have blocked you."); */
+
 
 
 	
@@ -602,11 +653,6 @@ void checkHacks(){
 		SpeedhackAudio::set(1);
 		cocos2d::CCDirector::sharedDirector()->getScheduler()->setTimeScale(1);
 	}
-	if (SongBypassEnabled){
-        WriteBytes((void*)(gd::base + 0x2CDF44), {0x68, 0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x61, 0x62, 0x73, 0x6F, 0x6C, 0x6C, 0x6C, 0x75, 0x74, 0x65, 0x2E, 0x63, 0x6F, 0x6D, 0x2F, 0x61, 0x70, 0x69, 0x2F, 0x67, 0x64, 0x5F, 0x73, 0x6F, 0x6E, 0x67, 0x5F, 0x62, 0x79, 0x70, 0x61, 0x73, 0x73, 0x00, });
-	} else {
-        WriteBytes((void*)(gd::base + 0x2CDF44), {0x68, 0x74, 0x74, 0x70, 0x3A, 0x2F, 0x2F, 0x77, 0x77, 0x77, 0x2E, 0x62, 0x6F, 0x6F, 0x6D, 0x6C, 0x69, 0x6E, 0x67, 0x73, 0x2E, 0x63, 0x6F, 0x6D, 0x2F, 0x64, 0x61, 0x74, 0x61, 0x62, 0x61, 0x73, 0x65, 0x2F, 0x67, 0x65, 0x74, 0x47, 0x4A, 0x53, 0x6F, 0x6E, 0x67, 0x49, 0x6E, 0x66, 0x6F, 0x2E, 0x70, 0x68, 0x70, 0x00, });
-	}
 	if (IconsEnabled){
 		WriteBytes((void*)(gd::base + 0xC50A8), {0xB0, 0x01, 0x90, 0x90, 0x90, });
 		WriteBytes((void*)(gd::base + 0xC54BA), {0xB0, 0x01, 0x90, 0x90, 0x90, });
@@ -857,9 +903,6 @@ static void ShowGlobalHacks(){
 static void ShowBypassHacks(){
 	if (!ImGui::CollapsingHeader("Bypass"))
 		return;
-	ImGui::Checkbox("Song Bypass", &SongBypassEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Allows the downloading of banned songs.");
 	ImGui::Checkbox("Icons", &IconsEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks all icons.");
