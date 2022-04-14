@@ -10,8 +10,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     # install dependencies
-    - name: configure
+    - name: Configure
       run: cmake -G "Visual Studio 16 2019" -B build -DCMAKE_BUILD_TYPE=Release -T host=x86 -A win32
     # build project
-    - name: build
+    - name: Build
       run: cmake --build build --config Release --target ALL_BUILD
