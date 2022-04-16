@@ -1,4 +1,3 @@
-
 #include <Windows.h>
 #include <imgui_hook.h>
 #include <imgui.h>
@@ -10,7 +9,9 @@
 #include <Psapi.h>
 #include <fstream>
 #include "SimpleIni.h"
-
+#include <cocos2d.h>
+#include "utils.hpp"
+#include "PlayLayer.h"
 
 static bool DEVELOPER_MODE = true;
 static bool show = false;
@@ -84,8 +85,15 @@ static bool FreeShopItemsEnabled;
 static bool GatekeeperVaultEnabled;
 static bool BackupStarsLimitEnabled;
 static bool UnblockHackEnabled;
-
-
+// utilities
+static bool NoClipAccEnabled;
+static bool NoClipAccCreated = false;
+bool test = false;
+bool wouldDie = false;
+int frames = 0;
+int deaths = 0;
+float totalDelta = 0;
+float prevX = 0;
 
 typedef void*   (__cdecl *fSharedApplication)();
 typedef void    (__thiscall *fSetAnimationInterval)(void *instance, double delay);
@@ -95,7 +103,19 @@ fSetAnimationInterval setAnimInterval;
 using namespace cocos2d;
 using namespace std;
 
+
+char * filter = "Dynamic link library (*.dll)\0*.dll";
+
 CSimpleIniA ini;
+
+void WriteBytes(void* location, std::vector<BYTE> bytes) {
+	DWORD old_prot;
+	VirtualProtect(location, bytes.size(), PAGE_EXECUTE_READWRITE, &old_prot);
+
+	memcpy(location, bytes.data(), bytes.size());
+
+	VirtualProtect(location, bytes.size(), old_prot, &old_prot);
+}
 
 
 namespace SpeedhackAudio {
@@ -171,14 +191,6 @@ uint32_t GetModuleBase(const char *module)
 
 uint32_t cocosBase = GetModuleBase("libcocos2d.dll");
 
-void WriteBytes(void* location, std::vector<BYTE> bytes) {
-	DWORD old_prot;
-	VirtualProtect(location, bytes.size(), PAGE_EXECUTE_READWRITE, &old_prot);
-
-	memcpy(location, bytes.data(), bytes.size());
-
-	VirtualProtect(location, bytes.size(), old_prot, &old_prot);
-}
 void saveHacks()
 {
 	ini.SetUnicode();
@@ -216,67 +228,27 @@ void saveHacks()
 
 	ini.SetBoolValue("fps-bypass","FPSBypassEnabled",FPSBypassEnabled);
 	ini.SetDoubleValue("fps-bypass","TargetFPS",(double)interval);
-	ini.SaveFile("save.ini");
-
-}
-
-void loadHacks(){
-	SI_Error rc = ini.LoadFile("save.ini");
-	if (rc<0)
-	{
-		MessageBoxA(NULL, "Failed to load save file", "Info", MB_ICONERROR);
-	}
-	NoClipEnabled                         = ini.GetBoolValue("player","NoClipEnabled");
-	NoSpikesEnabled                     = ini.GetBoolValue("player","NoSpikesEnabled");
-	EverythingHurtsEnabled       = ini.GetBoolValue("player","EverythingHurtsEnabled");
-	FreezePlayerEnabled             = ini.GetBoolValue("player","FreezePlayerEnabled");
-	JumpHackEnabled                     = ini.GetBoolValue("player","JumpHackEnabled");
-	ForceTrailStateEnabled       = ini.GetBoolValue("player","ForceTrailStateEnabled");
-	HideAttemptsEnabled             = ini.GetBoolValue("player","HideAttemptsEnabled");
-	PracticeMusicHackEnabled   = ini.GetBoolValue("player","PracticeMusicHackEnabled");
-	NoPulseEnabled                       = ini.GetBoolValue("player","NoPulseEnabled");
-	IgnoreESCEnabled                   = ini.GetBoolValue("player","IgnoreESCEnabled");
-	SuicideEnabled                       = ini.GetBoolValue("player","SuicideEnabled");
-	NoParticlesEnabled               = ini.GetBoolValue("player","NoParticlesEnabled");
 	
-	CopyHackEnabled =                       ini.GetBoolValue("creator", "CopyHackEnabled");
-	NoCMarkEnabled =                         ini.GetBoolValue("creator", "NoCMarkEnabled");
-	LevelEditEnabled =                     ini.GetBoolValue("creator", "LevelEditEnabled");
-	ObjectBypassEnabled =               ini.GetBoolValue("creator", "ObjectBypassEnabled");
-	CustomObjectBypassEnabled =   ini.GetBoolValue("creator", "CustomObjectBypassEnabled");
-	ZoomBypassEnabled =                   ini.GetBoolValue("creator", "ZoomBypassEnabled");
-	ToolboxButtonBypassEnabled = ini.GetBoolValue("creator", "ToolboxButtonBypassEnabled");
-	VerifyHackEnabled =                   ini.GetBoolValue("creator", "VerifyHackEnabled");
-	DefaultSongBypassEnabled =     ini.GetBoolValue("creator", "DefaultSongBypassEnabled");
-	EditorExtensionEnabled =         ini.GetBoolValue("creator", "EditorExtensionEnabled");
-	PlaceOverEnabled =                     ini.GetBoolValue("creator", "PlaceOverEnabled");
-	TestmodeBypassEnabled =           ini.GetBoolValue("creator", "TestmodeBypassEnabled");
-	RotationHackEnabled =               ini.GetBoolValue("creator", "RotationHackEnabled");
-	FreeScrollEnabled =                   ini.GetBoolValue("creator", "FreeScrollEnabled");
-	HideUIEnabled =                           ini.GetBoolValue("creator", "HideUIEnabled");
-	ZOrderBypassEnabled =               ini.GetBoolValue("creator", "ZOrderBypassEnabled");
-
-	FPSBypassEnabled = ini.GetBoolValue("fps-bypass","FPSBypassEnabled");
-	interval = (float)ini.GetDoubleValue("fps-bypass","TargetFPS");
-
-	IconsEnabled  = ini.GetBoolValue("bypass", "");
-	TextLengthEnabled = ini.GetBoolValue("bypass", "");
-	CharacterFilterEnabled = ini.GetBoolValue("bypass", "");
-	SliderLimitEnabled = ini.GetBoolValue("bypass", "");
-	MainLevelsEnabled = ini.GetBoolValue("bypass", "");
-	GuardVaultEnabled = ini.GetBoolValue("bypass", "");
-	KeymasterVaultEnabled = ini.GetBoolValue("bypass", "");
-	KeymasterBasementEnabled = ini.GetBoolValue("bypass", "");
-	BasementKeyBypassEnabled = ini.GetBoolValue("bypass", "");
-	ChallengeBypassEnabled = ini.GetBoolValue("bypass", "");
-	TreasureRoomEnabled = ini.GetBoolValue("bypass", "");
-	PotborShopEnabled = ini.GetBoolValue("bypass", "");
-	ScratchShopEnabled = ini.GetBoolValue("bypass", "");
-	FreeShopItemsEnabled = ini.GetBoolValue("bypass", "");
-	GatekeeperVaultEnabled = ini.GetBoolValue("bypass", "");
-	BackupStarsLimitEnabled = ini.GetBoolValue("bypass", "");
-	UnblockHackEnabled = ini.GetBoolValue("bypass", "");
-
+	ini.SetBoolValue("bypass","IconsEnabled",IconsEnabled);
+	ini.SetBoolValue("bypass", "TextLengthEnabled", TextLengthEnabled);
+	ini.SetBoolValue("bypass", "CharacterFilterEnabled", CharacterFilterEnabled);
+	ini.SetBoolValue("bypass", "SliderLimitEnabled", SliderLimitEnabled);
+	ini.SetBoolValue("bypass", "MainLevelsEnabled", MainLevelsEnabled);
+	ini.SetBoolValue("bypass", "GuardVaultEnabled", GuardVaultEnabled);
+	ini.SetBoolValue("bypass", "KeymasterVaultEnabled", KeymasterVaultEnabled);
+	ini.SetBoolValue("bypass", "KeymasterBasementEnabled", KeymasterBasementEnabled);
+	ini.SetBoolValue("bypass", "BasementKeyBypassEnabled", BasementKeyBypassEnabled);
+	ini.SetBoolValue("bypass", "ChallengeBypassEnabled", ChallengeBypassEnabled);
+	ini.SetBoolValue("bypass", "TreasureRoomEnabled", TreasureRoomEnabled);
+	ini.SetBoolValue("bypass", "PotborShopEnabled", PotborShopEnabled);
+	ini.SetBoolValue("bypass", "ScratchShopEnabled", ScratchShopEnabled);
+	ini.SetBoolValue("bypass", "FreeShopItemsEnabled", FreeShopItemsEnabled);
+	ini.SetBoolValue("bypass", "GatekeeperVaultEnabled", GatekeeperVaultEnabled);
+	ini.SetBoolValue("bypass", "BackupStarsLimitEnabled", BackupStarsLimitEnabled);
+	ini.SetBoolValue("bypass", "UnblockHackEnabled", UnblockHackEnabled);
+	ini.SaveFile("save.ini");
+	
+	
 	/* 	ImGui::Checkbox("Icons", &IconsEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks all icons.");
@@ -331,6 +303,69 @@ void loadHacks(){
 
 
 
+
+}
+
+void loadHacks(){
+	SI_Error rc = ini.LoadFile("save.ini");
+	if (rc<0)
+	{
+		MessageBoxA(NULL, "Failed to load save file", "Info", MB_ICONERROR);
+	}
+	NoClipEnabled                         = ini.GetBoolValue("player","NoClipEnabled");
+	NoSpikesEnabled                     = ini.GetBoolValue("player","NoSpikesEnabled");
+	EverythingHurtsEnabled       = ini.GetBoolValue("player","EverythingHurtsEnabled");
+	FreezePlayerEnabled             = ini.GetBoolValue("player","FreezePlayerEnabled");
+	JumpHackEnabled                     = ini.GetBoolValue("player","JumpHackEnabled");
+	ForceTrailStateEnabled       = ini.GetBoolValue("player","ForceTrailStateEnabled");
+	HideAttemptsEnabled             = ini.GetBoolValue("player","HideAttemptsEnabled");
+	PracticeMusicHackEnabled   = ini.GetBoolValue("player","PracticeMusicHackEnabled");
+	NoPulseEnabled                       = ini.GetBoolValue("player","NoPulseEnabled");
+	IgnoreESCEnabled                   = ini.GetBoolValue("player","IgnoreESCEnabled");
+	SuicideEnabled                       = ini.GetBoolValue("player","SuicideEnabled");
+	NoParticlesEnabled               = ini.GetBoolValue("player","NoParticlesEnabled");
+	
+	CopyHackEnabled =                       ini.GetBoolValue("creator", "CopyHackEnabled");
+	NoCMarkEnabled =                         ini.GetBoolValue("creator", "NoCMarkEnabled");
+	LevelEditEnabled =                     ini.GetBoolValue("creator", "LevelEditEnabled");
+	ObjectBypassEnabled =               ini.GetBoolValue("creator", "ObjectBypassEnabled");
+	CustomObjectBypassEnabled =   ini.GetBoolValue("creator", "CustomObjectBypassEnabled");
+	ZoomBypassEnabled =                   ini.GetBoolValue("creator", "ZoomBypassEnabled");
+	ToolboxButtonBypassEnabled = ini.GetBoolValue("creator", "ToolboxButtonBypassEnabled");
+	VerifyHackEnabled =                   ini.GetBoolValue("creator", "VerifyHackEnabled");
+	DefaultSongBypassEnabled =     ini.GetBoolValue("creator", "DefaultSongBypassEnabled");
+	EditorExtensionEnabled =         ini.GetBoolValue("creator", "EditorExtensionEnabled");
+	PlaceOverEnabled =                     ini.GetBoolValue("creator", "PlaceOverEnabled");
+	TestmodeBypassEnabled =           ini.GetBoolValue("creator", "TestmodeBypassEnabled");
+	RotationHackEnabled =               ini.GetBoolValue("creator", "RotationHackEnabled");
+	FreeScrollEnabled =                   ini.GetBoolValue("creator", "FreeScrollEnabled");
+	HideUIEnabled =                           ini.GetBoolValue("creator", "HideUIEnabled");
+	ZOrderBypassEnabled =               ini.GetBoolValue("creator", "ZOrderBypassEnabled");
+
+	FPSBypassEnabled = ini.GetBoolValue("fps-bypass","FPSBypassEnabled");
+	interval = (float)ini.GetDoubleValue("fps-bypass","TargetFPS");
+
+	IconsEnabled  = ini.GetBoolValue("bypass", "IconsEnabled");
+	TextLengthEnabled = ini.GetBoolValue("bypass", "TextLengthEnabled");
+	CharacterFilterEnabled = ini.GetBoolValue("bypass", "CharacterFilterEnabled");
+	SliderLimitEnabled = ini.GetBoolValue("bypass", "SliderLimitEnabled");
+	MainLevelsEnabled = ini.GetBoolValue("bypass", "MainLevelsEnabled");
+	GuardVaultEnabled = ini.GetBoolValue("bypass", "GuardVaultEnabled");
+	KeymasterVaultEnabled = ini.GetBoolValue("bypass", "KeymasterVaultEnabled");
+	KeymasterBasementEnabled = ini.GetBoolValue("bypass", "KeymasterBasementEnabled");
+	BasementKeyBypassEnabled = ini.GetBoolValue("bypass", "BasementKeyBypassEnabled");
+	ChallengeBypassEnabled = ini.GetBoolValue("bypass", "ChallengeBypassEnabled");
+	TreasureRoomEnabled = ini.GetBoolValue("bypass", "TreasureRoomEnabled");
+	PotborShopEnabled = ini.GetBoolValue("bypass", "PotborShopEnabled");
+	ScratchShopEnabled = ini.GetBoolValue("bypass", "ScratchShopEnabled");
+	FreeShopItemsEnabled = ini.GetBoolValue("bypass", "FreeShopItemsEnabled");
+	GatekeeperVaultEnabled = ini.GetBoolValue("bypass", "GatekeeperVaultEnabled");
+	BackupStarsLimitEnabled = ini.GetBoolValue("bypass", "BackupStarsLimitEnabled");
+	UnblockHackEnabled = ini.GetBoolValue("bypass", "UnblockHackEnabled");
+
+
+
+
 	
 
 	/*
@@ -370,48 +405,92 @@ void SetTargetFPS(float interval){
 	void *application = sharedApplication();
 	setAnimInterval(application, interval);
 }
+std::string chooseDLL() //dll
+{
+    OPENFILENAME ofn;
+    char fileName[MAX_PATH] = "";
+    ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lpstrFilter = filter;
+    ofn.lStructSize = sizeof(OPENFILENAME);
+    ofn.lpstrFile = fileName;
+    ofn.nMaxFile = MAX_PATH;
+    if (GetOpenFileName(&ofn))
+        return fileName;
 
-
-namespace PlayLayer {
-    void(__thiscall* onQuit)(CCLayer* self);
-    void __fastcall onQuitHook(CCLayer* self, void*);
-
-    bool(__thiscall* init)(CCLayer* self, void* level);
-    bool __fastcall initHook(CCLayer* self, void*, void* level);
-
-    void mem_init();
-
-    void __fastcall PlayLayer::onQuitHook(CCLayer* self, void*) {
-        CCDirector::sharedDirector()->getScheduler()->setTimeScale(1);
-        is_in_game = false;
-        SpeedhackAudio::set(always_on ? speed : 1);
-        CCDirector::sharedDirector()->getScheduler()->setTimeScale(always_on ? speed : 1);
-        PlayLayer::onQuit(self);
-    }
-
-    bool __fastcall PlayLayer::initHook(CCLayer* self, void*, void* level) {
-        bool result = PlayLayer::init(self, level);
-        SpeedhackAudio::set(speed);
-        CCDirector::sharedDirector()->getScheduler()->setTimeScale(speed);
-        is_in_game = true;
-        return result;
-    }
-
-    void PlayLayer::mem_init() {
-        size_t base = reinterpret_cast<size_t>(GetModuleHandle(0));
-		
-		MH_CreateHook(
-            (PVOID)(base + 0x20D810),
-            PlayLayer::onQuitHook,
-            (PVOID*)&PlayLayer::onQuit);
-
-        MH_CreateHook(
-            (PVOID)(base + 0x01FB780),
-            PlayLayer::initHook,
-            (PVOID*)&PlayLayer::init);
-    }
 }
 
+
+std::string getAccuracyText() {
+	if (frames == 0) return "Accuracy: 100.00%";
+	float p = (float)(frames - deaths) / (float)frames;
+	std::stringstream stream;
+	stream << "Accuracy: " << std::fixed << std::setprecision(2) << p * 100.f << "%";
+	return stream.str();
+}
+
+void updateLabels(gd::PlayLayer* layer, bool enabled) {
+    if (!layer) return;
+	auto textObj = cast<CCLabelBMFont*>(layer->getChildByTag(4001));
+    const auto win_size = CCDirector::sharedDirector()->getWinSize();
+	if (!textObj)
+	{
+		textObj = CCLabelBMFont::create("Accuracy: 100.00%", "goldFont.fnt");
+		textObj->setZOrder(1000);
+		textObj->setTag(100000);
+		textObj->setScale(0.5);
+		textObj->setPosition({ win_size.width / 2, win_size.height / 2});
+		if (enabled)
+		{
+			textObj->setVisible(true);
+		} else {
+			textObj->setVisible(false);
+		}
+		layer->addChild(textObj);
+	} else {
+		if (enabled)
+		{
+			textObj->setVisible(true);
+		} else {
+			textObj->setVisible(false);
+		}
+	}
+
+
+	textObj->setZOrder(1000);
+	textObj->setTag(100000);
+	textObj->setScale(0.5);
+
+	textObj->setPosition({ win_size.width / 2, win_size.height / 2});
+	layer->addChild(textObj);
+
+/*
+	if (enabled)
+	{
+		textObj->setVisible(true);
+	} else {
+		textObj->setVisible(false);
+	} */
+}
+
+void updateLabels(bool enabled) {
+    return updateLabels(gd::GameManager::sharedState()->getPlayLayer(), enabled);
+}
+
+bool PlayLayer_init(gd::PlayLayer* self, gd::GJGameLevel* lvl) {
+    orig<&PlayLayer_init>(self, lvl);
+    updateLabels(NoClipAccEnabled);
+    return true;
+}
+/*
+void PlayLayer_togglePracticeMode(gd::PlayLayer* self, bool toggle) {
+    orig<&PlayLayer_togglePracticeMode>(self, toggle);
+    updateLabels();
+}
+
+void PlayLayer_resetLevel(gd::PlayLayer* self) {
+    orig<&PlayLayer_resetLevel>(self);
+    updateLabels();
+} */
 
 void checkHacks(){
 	if (NoClipEnabled){
@@ -986,6 +1065,29 @@ static void ShowFPSBypass(){
 	ImGui::SameLine();
 	ImGui::InputFloat("", &interval, 10.f, 20.f, "%.1f");
 }
+
+static void ShowUtilities(){
+	if(!ImGui::CollapsingHeader("Utilities"))
+	return;
+
+	if (ImGui::Button("Inject Dll")) {
+    std::string stringpath = chooseDLL();
+    const char* DllPath = stringpath.c_str();
+    HWND hWnd = FindWindow(0, "Geometry Dash");
+        DWORD proccess_ID;
+        GetWindowThreadProcessId(hWnd, &proccess_ID);
+        HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, proccess_ID);
+        LPVOID pDllPath = VirtualAllocEx(hProcess, 0, strlen(DllPath) + 1,
+        MEM_COMMIT, PAGE_READWRITE);
+        WriteProcessMemory(hProcess, pDllPath, (LPVOID)DllPath,
+        strlen(DllPath) + 1, 0);
+        HANDLE hLoadThread = CreateRemoteThread(hProcess, 0, 0,
+        (LPTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandleA("Kernel32.dll"), "LoadLibraryA"), pDllPath, 0, 0);
+        WaitForSingleObject(hLoadThread, INFINITE);
+        VirtualFreeEx(hProcess, pDllPath, strlen(DllPath) + 1, MEM_RELEASE);
+		MessageBoxA(NULL, "DLL successfully injected","DLL Injection", MB_ICONINFORMATION);
+	}
+}
 static void ShowCustomization(){
 	if (!ImGui::CollapsingHeader("Customization"))
 		return;
@@ -1008,8 +1110,14 @@ static void ShowDeveloper(){
 	if(ImGui::Button("Load hacks")){
 		loadHacks();
 	}
+	ImGui::Checkbox("Enable NoClip Accuracy", &NoClipAccEnabled);
+
+	if (ImGui::Button("Apply")) {
+		updateLabels(NoClipAccEnabled);
+	}
 	
 }
+
 void MainWindow()
 {	
 	ImGui::Begin("Mod Menu", 0, ImGuiWindowFlags_NoResize);
@@ -1021,6 +1129,7 @@ void MainWindow()
 	ShowBypassHacks();
 	ShowSpeedhack();
 	ShowFPSBypass();
+	ShowUtilities();
 	ShowCustomization();
 	if (DEVELOPER_MODE)
 	{
@@ -1033,8 +1142,8 @@ void MainWindow()
 void MainThread() 
 {
 	SpeedhackAudio::init();
-    PlayLayer::mem_init();
-    MH_EnableHook(MH_ALL_HOOKS);
+	MH_EnableHook(MH_ALL_HOOKS);
+	add_hook<&PlayLayer_init>(gd::base + 0x1FB780);
 	checkHacks();
 	DEVMODE dm;
 	EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm);
@@ -1044,7 +1153,6 @@ void MainThread()
 	} else {
 		SetTargetFPS(dm.dmDisplayFrequency);
 	}
-
 	if (GetAsyncKeyState(VK_INSERT) & 1) {
     	show = !show;
 	}
