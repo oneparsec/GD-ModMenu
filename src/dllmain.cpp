@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <imgui_hook.h>
 #include <imgui.h>
+#include <MinHook.h>
 #include <gd.h>
 #include <iostream>
 #include <Psapi.h>
@@ -18,7 +19,7 @@
 #include <ctime>
 #include <thread>
 #include <commdlg.h>
-#include <MinHook.h>
+
 
 static bool show = false;
 static bool showDemoWindow = false;
