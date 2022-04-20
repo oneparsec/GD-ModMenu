@@ -1,27 +1,9 @@
 /*
-MIT License
 
-Copyright (c) 2022 Alexandr Simonov
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 */
 #define DEVELOPER_MODE TRUE
+#define VERSION "DEV_RELEASE"
+
 #include <Windows.h>
 #include <imgui_hook.h>
 #include <imgui.h>
@@ -122,6 +104,11 @@ static bool CPSCounterEnabled;
 static bool TestingFPSCounterEnabled = true;
 static bool TestingCPSCounterEnabled;
 
+// developer
+static bool showAbout;
+
+
+static char license[1067]= "MIT License\nCopyright (c) 2022 Alexandr Simonov\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the ""Software""), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.";
 
 int totalClicks = 0;
 int midClickCount = 0, actualClickCount = 0;
@@ -658,6 +645,47 @@ void PlayLayer::mem_init() {
 	MH_EnableHook(MH_ALL_HOOKS);
 }
 
+
+static void ShowAboutWindow(){
+	ImGui::Begin("About Mod Menu", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Text("Mod Menu %s", VERSION);
+    ImGui::Separator();
+    ImGui::Text("By Alexandr Simonov");
+    ImGui::Text("Mod Menu is licensed under the MIT License.");
+	ImGui::Separator();
+	ImGui::Text("Used libraries: ");
+	ImGui::Text("ImGui: %s", ImGui::GetVersion());
+	ImGui::Text("MinHook: %s", "1.3.3");
+	ImGui::Text("SimpleIni: %s", "4.19");
+
+    static bool show_config_info = false;
+    ImGui::Checkbox("View license", &show_config_info);
+	ImGui::SameLine();
+	if(ImGui::Button("View on GitHub"))
+	{
+		ShellExecute(0, 0, LPCSTR("https://github.com/OneParsec/GD-ModMenu"), 0, 0 , SW_SHOW );
+	}
+    if (show_config_info)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        ImGuiStyle& style = ImGui::GetStyle();
+
+        bool copy_to_clipboard = ImGui::Button("Copy to clipboard");
+        ImVec2 child_size = ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 18);
+        ImGui::BeginChildFrame(ImGui::GetID("cfg_infos"), child_size, ImGuiWindowFlags_NoMove);
+        if (copy_to_clipboard)
+        {
+            ImGui::LogToClipboard();
+            ImGui::LogText("```\n"); // Back quotes will make text appears without formatting when pasting on GitHub
+        }
+
+        ImGui::Text(license);
+        ImGui::EndChildFrame();
+    }
+}
+
+
+
 void checkHacks(){
 	if (NoClipEnabled){
 	WriteBytes((void*)(gd::base + 0x20A23C), {0xE9, 0x79, 0x06, 0x00, 0x00});
@@ -1028,14 +1056,23 @@ void checkHacks(){
 			lastAsyncKeyStateValue = curKeyState;
 		}
 	}
+	if (showAbout)
+	{
+		ShowAboutWindow();
+	}
 }
 
 	
 
 
 static void ShowPlayerHacks(){
-	if (!ImGui::CollapsingHeader("Player"))
-		return;
+	ImGui::Begin("Player");
+	
+	ImGui::SetWindowSize(ImVec2(210, 360));
+	
+	ImGui::SetWindowPos(ImVec2(10, 10));
+
+
 	ImGui::Checkbox("NoClip", &NoClipEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Makes the player invincible. (Safe patch.)");
@@ -1111,10 +1148,15 @@ static void ShowPlayerHacks(){
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Disables resuming the particle system.");
 
+	ImGui::End();
+
 }
 static void ShowCreatorHacks(){
-	if (!ImGui::CollapsingHeader("Creator"))
-		return;
+	ImGui::Begin("Creator");
+
+	ImGui::SetWindowSize(ImVec2(210, 400));
+	ImGui::SetWindowPos(ImVec2(230, 10));
+
 	ImGui::Checkbox("Copy Hack", &CopyHackEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you copy any level, without a password.");
@@ -1178,7 +1220,7 @@ static void ShowCreatorHacks(){
 	ImGui::Checkbox("Z Order Bypass", &ZOrderBypassEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Removed the -100 to 100 Z order range limit.");
-
+	ImGui::End();
 
 }
 static void ShowGlobalHacks(){
@@ -1186,8 +1228,9 @@ static void ShowGlobalHacks(){
 		return;
 }
 static void ShowBypassHacks(){
-	if (!ImGui::CollapsingHeader("Bypass"))
-		return;
+	ImGui::Begin("Bypass");
+	ImGui::SetWindowSize(ImVec2(210, 360));
+	ImGui::SetWindowPos(ImVec2(450, 10));
 	ImGui::Checkbox("Icons", &IconsEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks all icons.");
@@ -1239,10 +1282,13 @@ static void ShowBypassHacks(){
 	ImGui::Checkbox("Unblock Hack", &UnblockHackEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you view profiles of users who have blocked you.");
+	ImGui::End();
 }
 static void ShowSpeedhack(){
-	if (!ImGui::CollapsingHeader("Speedhack"))
-		return;
+	ImGui::Begin("Speedhack");
+	ImGui::SetWindowSize(ImVec2(210, 110));
+	ImGui::SetWindowPos(ImVec2(10, 380));
+	
 	if (GetAsyncKeyState(VK_F2) & 5)
 	{
 		speed += f2_offset;
@@ -1251,25 +1297,31 @@ static void ShowSpeedhack(){
 	{
 		speed -= f1_offset;
 	}
-	ImGui::SliderFloat("Speedhack", &speed, 0.0f, 20.0f, "%.1f");
+	ImGui::SliderFloat("x", &speed, 0.0f, 20.0f, "%.1f");
 	ImGui::Checkbox("Enabled", &speedhackEnabled);
-	ImGui::SameLine();
 	ImGui::Checkbox("Speedhack audio", &speedhackAudioEnabled);
 	
 	// ImGui::InputFloat2("F1 and F2 offsets", offsets, "%.1f");
-	ImGui::InputFloat("F1 Offset", &f1_offset, 0.5, 1, "%.1f");
+	/*ImGui::InputFloat("F1 Offset", &f1_offset, 0.5, 1, "%.1f");
 	if(ImGui::IsItemHovered()){
 		ImGui::SetTooltip("Note: Use F1 to decrease speed and F2 to increase :)");
 	}
 	ImGui::InputFloat("F2 Offset", &f2_offset, 0.5, 1, "%.1f");
-
+	if(ImGui::IsItemHovered()){
+		ImGui::SetTooltip("Note: Use F1 to decrease speed and F2 to increase :)");
+	} */
+	ImGui::End();
 }
 static void ShowFPSBypass(){
-	if (!ImGui::CollapsingHeader("FPS Bypass"))
-	return;
-	ImGui::Checkbox("Enable FPS Bypass", &FPSBypassEnabled);
+	ImGui::Begin("FPS Bypass");
+	ImGui::SetWindowSize(ImVec2(210, 110));
+	ImGui::SetWindowPos(ImVec2(230, 420));
+
+	ImGui::Checkbox("Enabled", &FPSBypassEnabled);
 	ImGui::SameLine();
 	ImGui::InputFloat("", &interval, 10.f, 20.f, "%.1f");
+
+	ImGui::End();
 }
 
 static void ShowUtilities(){
@@ -1326,14 +1378,20 @@ static void ShowDeveloper(){
 
 	ImGui::Checkbox("Enable FPS Counter (Using game resources)", &TestingFPSCounterEnabled);
 	ImGui::Checkbox("Enable CPS Counter (Using game resources)", &TestingCPSCounterEnabled);
+
+	ImGui::Separator();
+	ImGui::Checkbox("Show about window", &showAbout);
 	
 }
+
+
 
 void MainWindow()
 {	
 	ImGui::Begin("Mod Menu", 0/*, ImGuiWindowFlags_NoResize*/ );
 	/* ImGui::SetWindowSize(ImVec2(273.f,484.f)); */
-	ImGui::GetIO().WantCaptureMouse = true;
+	const bool enable_touch = !ImGui::GetIO().WantCaptureMouse || !show;
+	cocos2d::CCDirector::sharedDirector()->getTouchDispatcher()->setDispatchEvents(enable_touch);
 	ShowPlayerHacks();
 	ShowCreatorHacks();
 	ShowGlobalHacks();
@@ -1363,7 +1421,7 @@ void MainThread()
 	} else {
 		SetTargetFPS(dm.dmDisplayFrequency);
 	}
-	if (GetAsyncKeyState(VK_RSHIFT) & 1) {
+	if (GetAsyncKeyState(VK_INSERT) & 1) {
     	show = !show;
 	}
 	if (show) {
