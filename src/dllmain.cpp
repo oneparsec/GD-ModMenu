@@ -18,7 +18,7 @@
 #include <chrono>
 #include <ctime>
 #include <thread>
-#include <commdlg.h
+#include <commdlg.h>
 
 static bool show = false;
 static bool showDemoWindow = false;
