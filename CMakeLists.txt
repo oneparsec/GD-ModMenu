@@ -24,6 +24,8 @@ target_include_directories(ModMenu PRIVATE
   libraries/gd.h/include
   libraries/mat-dash/include
   libraries/config
+  libraries/gd.h/layers_scenes_transitions_nodes
+  libraries/detours
 )
 
 add_subdirectory(libraries/minhook)
@@ -31,6 +33,7 @@ add_subdirectory(libraries/imgui)
 add_subdirectory(libraries/cocos-headers)
 target_link_libraries(ModMenu
   ${CMAKE_SOURCE_DIR}/libraries/cocos-headers/cocos2dx/libcocos2d.lib
+  ${CMAKE_SOURCE_DIR}/libraries/detours/detours.lib
   imgui_hook
   minhook
   opengl32

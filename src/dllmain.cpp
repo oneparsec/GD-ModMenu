@@ -1,3 +1,4 @@
+#define DEVELOPER_MODE TRUE
 #include <Windows.h>
 #include <imgui_hook.h>
 #include <imgui.h>
@@ -11,9 +12,14 @@
 #include "SimpleIni.h"
 #include <cocos2d.h>
 #include "utils.hpp"
-#include "PlayLayer.h"
+#include <iostream>
+#include <fstream>
+#include <shellapi.h>
+#include <chrono>
+#include <ctime>
+#include <thread>
+#include <commdlg.h
 
-static bool DEVELOPER_MODE = true;
 static bool show = false;
 static bool showDemoWindow = false;
 static bool speedhackEnabled;
@@ -88,12 +94,38 @@ static bool UnblockHackEnabled;
 // utilities
 static bool NoClipAccEnabled;
 static bool NoClipAccCreated = false;
-bool test = false;
-bool wouldDie = false;
-int frames = 0;
-int deaths = 0;
-float totalDelta = 0;
-float prevX = 0;
+static bool FPSCounterEnabled;
+static bool CPSCounterEnabled;
+static bool TestingFPSCounterEnabled = true;
+static bool TestingCPSCounterEnabled;
+
+
+int totalClicks = 0;
+int midClickCount = 0, actualClickCount = 0;
+int lastAsyncKeyStateValue = 1337;
+
+static struct {
+	bool wouldDie = false;
+	int frames = 0;
+	int deaths = 0;
+	float totalDelta = 0;
+	float prevX = 0;
+	bool created = false;
+	
+} noclipacc;
+
+static struct {
+	bool created = false;
+} fpsCounter;
+
+static struct {
+	bool inPractice;
+	bool inTestmode;
+	int smoothOut;
+} startposFix;
+
+
+
 
 typedef void*   (__cdecl *fSharedApplication)();
 typedef void    (__thiscall *fSetAnimationInterval)(void *instance, double delay);
@@ -102,6 +134,11 @@ fSetAnimationInterval setAnimInterval;
 
 using namespace cocos2d;
 using namespace std;
+
+chrono::system_clock::time_point start = chrono::system_clock::now(), now;
+
+chrono::duration<double> cycleTime;
+
 
 
 char * filter = "Dynamic link library (*.dll)\0*.dll";
@@ -193,6 +230,9 @@ uint32_t cocosBase = GetModuleBase("libcocos2d.dll");
 
 void saveHacks()
 {
+
+
+
 	ini.SetUnicode();
 	ini.SetBoolValue("player","NoClipEnabled", NoClipEnabled);
 	ini.SetBoolValue("player","NoSpikesEnabled", NoSpikesEnabled);
@@ -310,7 +350,9 @@ void loadHacks(){
 	SI_Error rc = ini.LoadFile("save.ini");
 	if (rc<0)
 	{
-		MessageBoxA(NULL, "Failed to load save file", "Info", MB_ICONERROR);
+		MessageBoxA(NULL, "Failed to load save file. It will be created.", "Error occured", MB_ICONERROR);
+		ofstream of("save.ini",ios::app);
+		of << endl;
 	}
 	NoClipEnabled                         = ini.GetBoolValue("player","NoClipEnabled");
 	NoSpikesEnabled                     = ini.GetBoolValue("player","NoSpikesEnabled");
@@ -362,37 +404,6 @@ void loadHacks(){
 	GatekeeperVaultEnabled = ini.GetBoolValue("bypass", "GatekeeperVaultEnabled");
 	BackupStarsLimitEnabled = ini.GetBoolValue("bypass", "BackupStarsLimitEnabled");
 	UnblockHackEnabled = ini.GetBoolValue("bypass", "UnblockHackEnabled");
-
-
-
-
-	
-
-	/*
-	cfg.readFile("save.cfg");
-	bool test = cfg.lookup("NoClipEnabled");
-	if (test)
-	{
-		MessageBox(NULL, "Sucess", "Info", MB_OK);
-	} else {
-		MessageBox(NULL, "Failed", "Info", MB_OK);
-	} */
-	
-	
-	/*
-	const int len = 30, strings = 5;
-	const char ch = '\n';
-	char mass[len][strings];
-	
-	ifstream fs("save.dat", ios::in | ios::binary); 
-	
-	for(int r = 0; r<strings; r++)
-	{
-		fs.getline(mass[r], len-1,ch);
-	}
-	fs.close();
-	MessageBoxA(NULL, LPCSTR(mass[0]), "Info", MB_OK); */
-	
 }
 
 void SetTargetFPS(float interval){
@@ -416,81 +427,221 @@ std::string chooseDLL() //dll
     ofn.nMaxFile = MAX_PATH;
     if (GetOpenFileName(&ofn))
         return fileName;
-
 }
 
-
 std::string getAccuracyText() {
-	if (frames == 0) return "Accuracy: 100.00%";
-	float p = (float)(frames - deaths) / (float)frames;
+	if (noclipacc.frames == 0) return "Accuracy: 100.00%";
+	float p = (float)(noclipacc.frames - noclipacc.deaths) / (float)noclipacc.frames;
 	std::stringstream stream;
 	stream << "Accuracy: " << std::fixed << std::setprecision(2) << p * 100.f << "%";
 	return stream.str();
 }
 
-void updateLabels(gd::PlayLayer* layer, bool enabled) {
-    if (!layer) return;
-	auto textObj = cast<CCLabelBMFont*>(layer->getChildByTag(4001));
-    const auto win_size = CCDirector::sharedDirector()->getWinSize();
-	if (!textObj)
+std::string getFramerateText(){
+	std::stringstream stream2;
+	stream2 << round(ImGui::GetIO().Framerate)<< " FPS";
+	return stream2.str();
+}
+
+namespace PlayLayer {
+
+	inline bool(__thiscall* pushButton)(void* self, int state, bool player);
+	bool __fastcall pushButtonHook(void* self, uintptr_t, int state, bool player);
+
+	inline bool(__thiscall* releaseButton)(void* self, int state, bool player);
+	bool __fastcall releaseButtonHook(void* self, uintptr_t, int state, bool player);
+
+	inline int(__thiscall* death)(void* self, void* go, void* powerrangers);
+	int __fastcall deathHook(void* self, void*, void* go, void* powerrangers);
+
+	inline bool(__thiscall* init)(CCLayer* self, void* GJGameLevel);
+	bool __fastcall initHook(CCLayer* self, int edx, void* GJGameLevel);
+
+	inline void(__thiscall* togglePractice)(void* self, bool practice);
+	void __fastcall togglePracticeHook(void* self, int edx, bool practice);
+
+	inline void(__thiscall* update)(cocos2d::CCLayer* self, float delta);
+	void __fastcall updateHook(cocos2d::CCLayer* self, void*, float delta);
+
+	inline int(__thiscall* resetLevel)(void* self);
+	int __fastcall resetHook(void* self);
+
+	void mem_init();
+
+}
+
+
+bool __fastcall PlayLayer::initHook(CCLayer* self, int edx, void* GJGameLevel) {
+	size_t base = (size_t)GetModuleHandle(0);
+	totalClicks = 0;
+	noclipacc.prevX = 0;
+	noclipacc.created = true;
+	startposFix.inPractice = false;
+	startposFix.inTestmode = *(bool*)((uintptr_t)self + 0x494);
+	startposFix.smoothOut = 0;
+
+	//CCLabelBMFont* textObj = (CCLabelBMFont*)self->getChildByTag(4000);
+	//CCLabelBMFont* textObj2 = (CCLabelBMFont*)self->getChildByTag(4001);
+
+	CCLabelBMFont* textObj = CCLabelBMFont::create(getAccuracyText().c_str(), "goldFont.fnt");
+	textObj->setZOrder(1000);
+	textObj->setTag(4000);
+	textObj->setScale(0.5);
+	auto size = textObj->getScaledContentSize();
+	textObj->setPosition({ size.width / 2 + 3, size.height / 2 + 3});
+	self->addChild(textObj);
+
+	CCLabelBMFont* textObj2 = CCLabelBMFont::create(getFramerateText().c_str(), "goldFont.fnt");
+	textObj2->setZOrder(1000);
+	textObj2->setTag(4001);
+	textObj2->setScale(0.5);
+	size = textObj2->getScaledContentSize();
+	textObj2->setPosition({ size.width, size.height});
+	self->addChild(textObj2);
+	
+	return init(self, GJGameLevel);
+}
+
+bool __fastcall PlayLayer::pushButtonHook(void* self, uintptr_t, int state, bool player) {
+	totalClicks++;
+	return PlayLayer::pushButton(self, state, player);
+}
+bool __fastcall PlayLayer::releaseButtonHook(void* self, uintptr_t, int state, bool player) {
+	return PlayLayer::releaseButton(self, state, player);
+}
+
+void __fastcall PlayLayer::togglePracticeHook(void* self, int edx, bool practice) {
+	size_t base = (size_t)GetModuleHandle(0);
+
+	startposFix.inPractice = practice;
+
+	return PlayLayer::togglePractice(self, practice);
+}
+
+
+
+
+int __fastcall PlayLayer::deathHook(void* self, void*, void* go, void* powerrangers) {
+	if (!NoClipEnabled)
 	{
-		textObj = CCLabelBMFont::create("Accuracy: 100.00%", "goldFont.fnt");
-		textObj->setZOrder(1000);
-		textObj->setTag(100000);
-		textObj->setScale(0.5);
-		textObj->setPosition({ win_size.width / 2, win_size.height / 2});
-		if (enabled)
-		{
-			textObj->setVisible(true);
-		} else {
-			textObj->setVisible(false);
-		}
-		layer->addChild(textObj);
-	} else {
-		if (enabled)
-		{
-			textObj->setVisible(true);
-		} else {
-			textObj->setVisible(false);
-		}
+		totalClicks = 0;
 	}
 
-
-	textObj->setZOrder(1000);
-	textObj->setTag(100000);
-	textObj->setScale(0.5);
-
-	textObj->setPosition({ win_size.width / 2, win_size.height / 2});
-	layer->addChild(textObj);
-
-/*
-	if (enabled)
+	if (NoClipEnabled)
 	{
+		noclipacc.wouldDie = true;
+	}
+	return PlayLayer::death(self, go, powerrangers);
+}
+void __fastcall PlayLayer::updateHook(cocos2d::CCLayer* self, void* edx, float delta) {
+	void* player1 = *(void**)((char*)self + 0x224);
+	float x = *(float*)((size_t)player1 + 0x67c);
+
+	
+	
+
+
+	float time = cocos2d::CCDirector::sharedDirector()->getAnimationInterval();
+	if (startposFix.smoothOut != 0 && delta - time < 1) { // if close enough to normal speed
+		startposFix.smoothOut --;
+	}
+	
+	if (x != noclipacc.prevX) {
+		noclipacc.frames += 1;
+		noclipacc.totalDelta += delta;
+	}
+
+	size_t base = (size_t)GetModuleHandle(0);
+	CCLabelBMFont* textObj = (CCLabelBMFont*)self->getChildByTag(4000);
+	CCLabelBMFont* textObj2 = (CCLabelBMFont*)self->getChildByTag(4001);
+	
+	if (NoClipAccEnabled) {
+		textObj->setString(getAccuracyText().c_str());
 		textObj->setVisible(true);
 	} else {
 		textObj->setVisible(false);
-	} */
+	}
+	if (noclipacc.wouldDie) {
+		noclipacc.wouldDie = false;
+		if (noclipacc.totalDelta >= 0.1 && x != noclipacc.prevX) {
+			noclipacc.deaths += 1;
+		}
+	}
+	noclipacc.prevX = x;
+
+
+	if (TestingFPSCounterEnabled)
+	{
+		textObj2->setString(getFramerateText().c_str());
+		textObj2->setVisible(true);
+	} else {
+		textObj2->setVisible(false);
+	}
+	
+	if (!startposFix.smoothOut) {
+		return update(self, delta);
+	}
+	return update(self, time);
 }
 
-void updateLabels(bool enabled) {
-    return updateLabels(gd::GameManager::sharedState()->getPlayLayer(), enabled);
+int __fastcall PlayLayer::resetHook(void* self) {
+	void* player1 = *(void**)((char*)self + 0x224);
+	noclipacc.prevX = *(float*)((size_t)player1 + 0x67c);
+	noclipacc.frames = 0;
+	noclipacc.totalDelta = 0;
+	noclipacc.deaths = 0;
+	noclipacc.wouldDie = false;
+
+
+	if (startposFix.inTestmode || startposFix.inPractice) {
+		startposFix.smoothOut = 2; // Account for 1 extra frame respawn
+	}
+	return resetLevel(self);
 }
 
-bool PlayLayer_init(gd::PlayLayer* self, gd::GJGameLevel* lvl) {
-    orig<&PlayLayer_init>(self, lvl);
-    updateLabels(NoClipAccEnabled);
-    return true;
-}
-/*
-void PlayLayer_togglePracticeMode(gd::PlayLayer* self, bool toggle) {
-    orig<&PlayLayer_togglePracticeMode>(self, toggle);
-    updateLabels();
-}
+void PlayLayer::mem_init() {
+	MH_Initialize();
 
-void PlayLayer_resetLevel(gd::PlayLayer* self) {
-    orig<&PlayLayer_resetLevel>(self);
-    updateLabels();
-} */
+	size_t base = reinterpret_cast<size_t>(GetModuleHandle(0));
+	MH_CreateHook(
+		(PVOID)(base + 0x111500),
+		PlayLayer::pushButtonHook,
+		(LPVOID*)&PlayLayer::pushButton
+	);
+
+	MH_CreateHook(
+		(PVOID)(base + 0x111660),
+		PlayLayer::releaseButtonHook,
+		(LPVOID*)&PlayLayer::releaseButton
+	);
+
+	MH_CreateHook(
+		(PVOID)(base + 0x20A1A0),
+		PlayLayer::deathHook,
+		(LPVOID*)&PlayLayer::death
+	);
+	MH_CreateHook(
+		(PVOID)(base + 0x01FB780),
+		PlayLayer::initHook,
+		(LPVOID*)&PlayLayer::init);
+	
+	MH_CreateHook(
+		(PVOID)(base + 0x20BF00),
+		PlayLayer::resetHook,
+		(LPVOID*)&PlayLayer::resetLevel);
+
+	MH_CreateHook(
+		(PVOID)(base + 0x2029C0),
+		PlayLayer::updateHook,
+		(LPVOID*)&PlayLayer::update);
+
+	MH_CreateHook(
+		(PVOID)(base + 0x20D0D0),
+		PlayLayer::togglePracticeHook,
+		(LPVOID*)&togglePractice);
+
+	MH_EnableHook(MH_ALL_HOOKS);
+}
 
 void checkHacks(){
 	if (NoClipEnabled){
@@ -822,6 +973,46 @@ void checkHacks(){
 	} else {
 		WriteBytes((void*)(gd::base + 0x29C0E8), {0x61, 0x48, 0x52, 0x30, 0x63, 0x44, 0x6F, 0x76, 0x4C, 0x33, 0x64, 0x33, 0x64, 0x79, 0x35, 0x69, 0x62, 0x32, 0x39, 0x74, 0x62, 0x47, 0x6C, 0x75, 0x5A, 0x33, 0x4D, 0x75, 0x59, 0x32, 0x39, 0x74, 0x4C, 0x32, 0x52, 0x68, 0x64, 0x47, 0x46, 0x69, 0x59, 0x58, 0x4E, 0x6C, 0x4C, 0x32, 0x64, 0x6C, 0x64, 0x45, 0x64, 0x4B, 0x56, 0x58, 0x4E, 0x6C, 0x63, 0x6B, 0x6C, 0x75, 0x5A, 0x6D, 0x38, 0x79, 0x4D, 0x43, 0x35, 0x77, 0x61, 0x48, 0x41, 0x3D, 0x00, });
 	}
+	if (FPSCounterEnabled)
+	{
+		ImGui::Begin("FPS", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar);
+		ImGui::SetWindowSize(ImVec2(210, 6));
+		ImGui::SetWindowPos(ImVec2(0, 0));
+		ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
+		ImGui::End();
+	}
+	if (CPSCounterEnabled)
+	{
+		ImGui::Begin("CPS", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar);
+		if (FPSCounterEnabled)
+		{
+			ImGui::SetWindowSize(ImVec2(210, 6));
+			ImGui::SetWindowPos(ImVec2(0, 19));
+		}
+		else
+		{
+			ImGui::SetWindowSize(ImVec2(210, 6));
+			ImGui::SetWindowPos(ImVec2(0, 0));
+		}
+
+		ImGui::Text("CPS: %i / %i", actualClickCount, totalClicks);
+		ImGui::End();
+
+		now = chrono::system_clock::now();
+		cycleTime = now - start;
+		if (cycleTime.count() > 1)
+		{
+			actualClickCount = midClickCount;
+			midClickCount = 0;
+			start = now;
+		}
+		else {
+			int curKeyState = GetAsyncKeyState(0x01);
+			if (lastAsyncKeyStateValue != curKeyState && curKeyState == -32767)
+				midClickCount++;
+			lastAsyncKeyStateValue = curKeyState;
+		}
+	}
 }
 
 	
@@ -1083,9 +1274,11 @@ static void ShowUtilities(){
         strlen(DllPath) + 1, 0);
         HANDLE hLoadThread = CreateRemoteThread(hProcess, 0, 0,
         (LPTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandleA("Kernel32.dll"), "LoadLibraryA"), pDllPath, 0, 0);
-        WaitForSingleObject(hLoadThread, INFINITE);
-        VirtualFreeEx(hProcess, pDllPath, strlen(DllPath) + 1, MEM_RELEASE);
-		MessageBoxA(NULL, "DLL successfully injected","DLL Injection", MB_ICONINFORMATION);
+        WaitForSingleObject(hLoadThread, INFINITE);     
+		if (VirtualFreeEx(hProcess, pDllPath, strlen(DllPath) + 1, MEM_RELEASE))
+		{
+			MessageBoxA(NULL, "DLL successfully injected","DLL Injection", MB_ICONINFORMATION);
+		}
 	}
 }
 static void ShowCustomization(){
@@ -1112,17 +1305,20 @@ static void ShowDeveloper(){
 	}
 	ImGui::Checkbox("Enable NoClip Accuracy", &NoClipAccEnabled);
 
-	if (ImGui::Button("Apply")) {
-		updateLabels(NoClipAccEnabled);
-	}
+	ImGui::Separator();
+	ImGui::Checkbox("Enable FPS Counter", &FPSCounterEnabled);
+	ImGui::Checkbox("Enable CPS Counter", &CPSCounterEnabled);
+
+	ImGui::Checkbox("Enable FPS Counter (Using game resources)", &TestingFPSCounterEnabled);
+	ImGui::Checkbox("Enable CPS Counter (Using game resources)", &TestingCPSCounterEnabled);
 	
 }
 
 void MainWindow()
 {	
-	ImGui::Begin("Mod Menu", 0, ImGuiWindowFlags_NoResize);
-	ImGui::SetWindowSize(ImVec2(273.f,484.f));
-
+	ImGui::Begin("Mod Menu", 0/*, ImGuiWindowFlags_NoResize*/ );
+	/* ImGui::SetWindowSize(ImVec2(273.f,484.f)); */
+	ImGui::GetIO().WantCaptureMouse = true;
 	ShowPlayerHacks();
 	ShowCreatorHacks();
 	ShowGlobalHacks();
@@ -1142,8 +1338,7 @@ void MainWindow()
 void MainThread() 
 {
 	SpeedhackAudio::init();
-	MH_EnableHook(MH_ALL_HOOKS);
-	add_hook<&PlayLayer_init>(gd::base + 0x1FB780);
+	PlayLayer::mem_init();
 	checkHacks();
 	DEVMODE dm;
 	EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm);
@@ -1153,7 +1348,7 @@ void MainThread()
 	} else {
 		SetTargetFPS(dm.dmDisplayFrequency);
 	}
-	if (GetAsyncKeyState(VK_INSERT) & 1) {
+	if (GetAsyncKeyState(VK_RSHIFT) & 1) {
     	show = !show;
 	}
 	if (show) {
@@ -1172,6 +1367,7 @@ BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved)
 		ImGuiHook::Load(MainThread);
 		break;
 	case DLL_PROCESS_DETACH:
+		saveHacks();
 		ImGuiHook::Unload();
 		break;
 	}
