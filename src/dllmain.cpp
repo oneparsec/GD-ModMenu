@@ -1,6 +1,10 @@
 #define DEVELOPER_MODE TRUE
 #define VERSION "DEV_RELEASE"
 
+#ifdef _MSC_VER
+#pragma warning(disable: 4251) // disable warning 4251
+#endif
+
 #include <Windows.h>
 #include <imgui_hook.h>
 #include <imgui.h>
