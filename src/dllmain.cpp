@@ -1,3 +1,26 @@
+/*
+MIT License
+
+Copyright (c) 2022 Alexandr Simonov
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 #define DEVELOPER_MODE TRUE
 #include <Windows.h>
 #include <imgui_hook.h>
@@ -518,10 +541,6 @@ void __fastcall PlayLayer::togglePracticeHook(void* self, int edx, bool practice
 
 	return PlayLayer::togglePractice(self, practice);
 }
-
-
-
-
 int __fastcall PlayLayer::deathHook(void* self, void*, void* go, void* powerrangers) {
 	if (!NoClipEnabled)
 	{
@@ -537,11 +556,6 @@ int __fastcall PlayLayer::deathHook(void* self, void*, void* go, void* powerrang
 void __fastcall PlayLayer::updateHook(cocos2d::CCLayer* self, void* edx, float delta) {
 	void* player1 = *(void**)((char*)self + 0x224);
 	float x = *(float*)((size_t)player1 + 0x67c);
-
-	
-	
-
-
 	float time = cocos2d::CCDirector::sharedDirector()->getAnimationInterval();
 	if (startposFix.smoothOut != 0 && delta - time < 1) { // if close enough to normal speed
 		startposFix.smoothOut --;
