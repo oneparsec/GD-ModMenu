@@ -22,10 +22,6 @@ target_include_directories(ModMenu PRIVATE
   libraries/imgui/kiero/minhook/include
   libraries/gd.h
   libraries/gd.h/include
-  libraries/mat-dash/include
-  libraries/config
-  libraries/gd.h/layers_scenes_transitions_nodes
-  libraries/detours
 )
 
 add_subdirectory(libraries/minhook)
