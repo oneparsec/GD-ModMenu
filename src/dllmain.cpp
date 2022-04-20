@@ -111,7 +111,8 @@ static struct {
 	float totalDelta = 0;
 	float prevX = 0;
 	bool created = false;
-	
+	bool left = true;
+	bool top = false;
 } noclipacc;
 
 static struct {
