@@ -4,3 +4,6 @@
 [submodule "libraries/minhook"]
 	path = libraries/minhook
 	url = https://github.com/TsudaKageyu/minhook.git
+[submodule "libraries/cocos-headers"]
+	path = libraries/cocos-headers
+	url = https://github.com/HJfod/cocos-headers.git

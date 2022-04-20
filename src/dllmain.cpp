@@ -1,6 +1,3 @@
-/*
-
-*/
 #define DEVELOPER_MODE TRUE
 #define VERSION "DEV_RELEASE"
 
@@ -8,10 +5,7 @@
 #include <imgui_hook.h>
 #include <imgui.h>
 #include <gd.h>
-#include <matdash.hpp>
 #include <iostream>
-#include <matdash.hpp>
-#include <matdash/minhook.hpp>
 #include <Psapi.h>
 #include <fstream>
 #include "SimpleIni.h"
@@ -24,6 +18,7 @@
 #include <ctime>
 #include <thread>
 #include <commdlg.h>
+#include <MinHook.h>
 
 static bool show = false;
 static bool showDemoWindow = false;

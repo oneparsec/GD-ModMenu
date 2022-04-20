@@ -33,7 +33,6 @@ add_subdirectory(libraries/imgui)
 add_subdirectory(libraries/cocos-headers)
 target_link_libraries(ModMenu
   ${CMAKE_SOURCE_DIR}/libraries/cocos-headers/cocos2dx/libcocos2d.lib
-  ${CMAKE_SOURCE_DIR}/libraries/detours/detours.lib
   imgui_hook
   minhook
   opengl32
