@@ -6,9 +6,10 @@ Matcool
 Pixelsaft
 Adaf
 TobyAdd
+fig
 */
 
-#define DEVELOPER_MODE TRUE
+#define DEVELOPER_MODE FALSE
 #define VERSION "DEV_RELEASE"
 
 #ifdef _MSC_VER
@@ -58,6 +59,7 @@ static bool NoPulseEnabled;
 static bool IgnoreESCEnabled;
 static bool SuicideEnabled;
 static bool AccuratePercentageEnabled;
+static bool OnlyPercentageEnabled;
 static bool NoParticlesEnabled;
 static bool InstantCompleteEnabled;
 // creator
@@ -108,11 +110,7 @@ static bool BackupStarsLimitEnabled;
 static bool UnblockHackEnabled;
 // utilities
 static bool NoClipAccEnabled;
-static bool NoClipAccCreated = false;
 static bool FPSCounterEnabled;
-static bool CPSCounterEnabled;
-static bool TestingFPSCounterEnabled = true;
-static bool TestingCPSCounterEnabled;
 
 // developer
 static bool showAbout;
@@ -268,6 +266,7 @@ void saveHacks()
 	ini.SetBoolValue("player","SuicideEnabled", SuicideEnabled);
 	ini.SetBoolValue("player","AccuratePercentageEnabled", AccuratePercentageEnabled);
 	ini.SetBoolValue("player","NoParticlesEnabled", NoParticlesEnabled);
+	ini.SetBoolValue("player", "OnlyPercentageEnabled", OnlyPercentageEnabled);
 
 
 	ini.SetBoolValue("creator","CopyHackEnabled", CopyHackEnabled);
@@ -386,7 +385,9 @@ void loadHacks(){
 	NoPulseEnabled                       = ini.GetBoolValue("player","NoPulseEnabled");
 	IgnoreESCEnabled                   = ini.GetBoolValue("player","IgnoreESCEnabled");
 	SuicideEnabled                       = ini.GetBoolValue("player","SuicideEnabled");
+	AccuratePercentageEnabled = ini.GetBoolValue("player", "AccuratePercentageEnabled");
 	NoParticlesEnabled               = ini.GetBoolValue("player","NoParticlesEnabled");
+	OnlyPercentageEnabled = ini.GetBoolValue("player", "OnlyPercentageEnabled");
 	
 	CopyHackEnabled =                       ini.GetBoolValue("creator", "CopyHackEnabled");
 	NoCMarkEnabled =                         ini.GetBoolValue("creator", "NoCMarkEnabled");
@@ -563,7 +564,7 @@ bool __fastcall PlayLayer::initHook(CCLayer* self, int edx, void* GJGameLevel) {
 	textObj2->setTag(4001);
 	textObj2->setScale(0.5);
 	size = textObj2->getScaledContentSize();
-	textObj2->setPosition({ size.width, size.height});
+	textObj2->setPosition({ size.width / 2 + 3, size.height / 2 + 3});
 	self->addChild(textObj2);
 	
 	return init(self, GJGameLevel);
@@ -614,6 +615,8 @@ void __fastcall PlayLayer::updateHook(cocos2d::CCLayer* self, void* edx, float d
 	CCLabelBMFont* textObj2 = (CCLabelBMFont*)self->getChildByTag(4001);
 	
 	if (NoClipAccEnabled) {
+		auto size = textObj->getScaledContentSize();
+		textObj->setPosition({ size.width / 2 + 3, size.height / 2 + 3});
 		textObj->setString(getAccuracyText().c_str());
 		textObj->setVisible(true);
 	} else {
@@ -628,8 +631,17 @@ void __fastcall PlayLayer::updateHook(cocos2d::CCLayer* self, void* edx, float d
 	noclipacc.prevX = x;
 
 
-	if (TestingFPSCounterEnabled)
+	if (FPSCounterEnabled)
 	{
+		if (NoClipAccEnabled)
+		{
+			auto size = textObj2->getScaledContentSize();
+			textObj2->setPosition({ size.width / 2 + 3, size.height / 2 + 16});
+		} else {
+			auto size = textObj2->getScaledContentSize();
+			textObj2->setPosition({ size.width / 2 + 3, size.height / 2 + 3});
+		}
+		
 		textObj2->setString(getFramerateText().c_str());
 		textObj2->setVisible(true);
 	} else {
@@ -700,46 +712,6 @@ void PlayLayer::mem_init() {
 
 	MH_EnableHook(MH_ALL_HOOKS);
 }
-
-
-static void ShowAboutWindow(){
-	ImGui::Begin("About Mod Menu", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::Text("Mod Menu %s", VERSION);
-    ImGui::Separator();
-    ImGui::Text("By Alexandr Simonov");
-    ImGui::Text("Mod Menu is licensed under the MIT License.");
-	ImGui::Separator();
-	ImGui::Text("Used libraries: ");
-	ImGui::Text("ImGui: %s", ImGui::GetVersion());
-	ImGui::Text("MinHook: %s", "1.3.3");
-	ImGui::Text("SimpleIni: %s", "4.19");
-
-    static bool show_config_info = false;
-    ImGui::Checkbox("View license", &show_config_info);
-	ImGui::SameLine();
-	if(ImGui::Button("View on GitHub"))
-	{
-		ShellExecute(0, 0, LPCSTR("https://github.com/OneParsec/GD-ModMenu"), 0, 0 , SW_SHOW );
-	}
-    if (show_config_info)
-    {
-        ImGuiIO& io = ImGui::GetIO();
-        ImGuiStyle& style = ImGui::GetStyle();
-
-        bool copy_to_clipboard = ImGui::Button("Copy to clipboard");
-        ImVec2 child_size = ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 18);
-        ImGui::BeginChildFrame(ImGui::GetID("cfg_infos"), child_size, ImGuiWindowFlags_NoMove);
-        if (copy_to_clipboard)
-        {
-            ImGui::LogToClipboard();
-            ImGui::LogText("```\n"); // Back quotes will make text appears without formatting when pasting on GitHub
-        }
-
-        ImGui::Text(license);
-        ImGui::EndChildFrame();
-    }
-}
-
 
 
 void checkHacks(){
@@ -1072,49 +1044,25 @@ void checkHacks(){
 	} else {
 		WriteBytes((void*)(gd::base + 0x29C0E8), {0x61, 0x48, 0x52, 0x30, 0x63, 0x44, 0x6F, 0x76, 0x4C, 0x33, 0x64, 0x33, 0x64, 0x79, 0x35, 0x69, 0x62, 0x32, 0x39, 0x74, 0x62, 0x47, 0x6C, 0x75, 0x5A, 0x33, 0x4D, 0x75, 0x59, 0x32, 0x39, 0x74, 0x4C, 0x32, 0x52, 0x68, 0x64, 0x47, 0x46, 0x69, 0x59, 0x58, 0x4E, 0x6C, 0x4C, 0x32, 0x64, 0x6C, 0x64, 0x45, 0x64, 0x4B, 0x56, 0x58, 0x4E, 0x6C, 0x63, 0x6B, 0x6C, 0x75, 0x5A, 0x6D, 0x38, 0x79, 0x4D, 0x43, 0x35, 0x77, 0x61, 0x48, 0x41, 0x3D, 0x00, });
 	}
-	if (FPSCounterEnabled)
+	if (AccuratePercentageEnabled)
 	{
-		ImGui::Begin("FPS", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar);
-		ImGui::SetWindowSize(ImVec2(210, 6));
-		ImGui::SetWindowPos(ImVec2(0, 0));
-		ImGui::Text("FPS: %.2f", ImGui::GetIO().Framerate);
-		ImGui::End();
+		WriteBytes((void*)(gd::base + 0x2080FB), {0xFF, 0x50, 0x64, 0xF3, 0x0F, 0x10, 0x00, 0x8B, 0x87, 0xC0, 0x03, 0x00, 0x00, 0x83, 0xEC, 0x08, 0x42});
+		WriteBytes((void*)(gd::base + 0x208114), { 0xF3, 0x0F, 0x5E, 0x87, 0xB4, 0x03, 0x00, 0x00, 0xC7, 0x02, 0x25, 0x2E, 0x32, 0x66, 0xC7, 0x42, 0x04, 0x25, 0x25, 0x00, 0x00, 0x8B, 0xB0, 0x04, 0x01, 0x00, 0x00, 0xF3, 0x0F, 0x5A, 0xC0, 0xF2, 0x0F, 0x11, 0x04, 0x24, 0x52});
+		WriteBytes((void*)(gd::base + 0x20813F), {0x83, 0xC4, 0x0C});
+	} else {
+		WriteBytes((void*)(gd::base + 0x2080FB), {0xFF, 0x50, 0x64, 0xF3, 0x0F, 0x10, 0x00, 0x8B, 0x87, 0xC0, 0x03, 0x00, 0x00, 0x83, 0xEC, 0x08, 0x42});
+		WriteBytes((void*)(gd::base + 0x208114), {0xF3, 0x0F, 0x5E, 0x87, 0xB4, 0x03, 0x00, 0x00, 0xC7, 0x02, 0x25, 0x2E, 0x30, 0x66, 0xC7, 0x42, 0x04, 0x25, 0x25, 0x00, 0x00, 0x8B, 0xB0, 0x04, 0x01, 0x00, 0x00, 0xF3, 0x0F, 0x5A, 0xC0, 0xF2, 0x0F, 0x11, 0x04, 0x24, 0x52});
+		WriteBytes((void*)(gd::base + 0x20813F), {0x83, 0xC4, 0x0C});
 	}
-	if (CPSCounterEnabled)
+	if (OnlyPercentageEnabled)
 	{
-		ImGui::Begin("CPS", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar);
-		if (FPSCounterEnabled)
-		{
-			ImGui::SetWindowSize(ImVec2(210, 6));
-			ImGui::SetWindowPos(ImVec2(0, 19));
-		}
-		else
-		{
-			ImGui::SetWindowSize(ImVec2(210, 6));
-			ImGui::SetWindowPos(ImVec2(0, 0));
-		}
-
-		ImGui::Text("CPS: %i / %i", actualClickCount, totalClicks);
-		ImGui::End();
-
-		now = chrono::system_clock::now();
-		cycleTime = now - start;
-		if (cycleTime.count() > 1)
-		{
-			actualClickCount = midClickCount;
-			midClickCount = 0;
-			start = now;
-		}
-		else {
-			int curKeyState = GetAsyncKeyState(0x01);
-			if (lastAsyncKeyStateValue != curKeyState && curKeyState == -32767)
-				midClickCount++;
-			lastAsyncKeyStateValue = curKeyState;
-		}
-	}
-	if (showAbout)
-	{
-		ShowAboutWindow();
+		WriteBytes((void*)(gd::base + 0x1FCE89), { 0x0F, 0x57, 0xC0, 0x90, 0x90, 0x90 });
+		WriteBytes((void*)(gd::base + 0x1FCF38), { 0x0D });
+		WriteBytes((void*)(gd::base + 0x1FCF6B), { 0x3F });
+	} else {
+		WriteBytes((void*)(gd::base + 0x1FCE89), { 0xF3, 0x0F, 0x10, 0x44, 0x24, 0x48 });
+		WriteBytes((void*)(gd::base + 0x1FCF38), { 0x05 });
+		WriteBytes((void*)(gd::base + 0x1FCF6B), { 0x00 });
 	}
 }
 
@@ -1122,9 +1070,9 @@ void checkHacks(){
 
 
 static void ShowPlayerHacks(){
-	ImGui::Begin("Player");
+	ImGui::Begin("Player", NULL, ImGuiWindowFlags_NoMove);
 	
-	ImGui::SetWindowSize(ImVec2(210, 360));
+	ImGui::SetWindowSize(ImVec2(210, 380));
 	
 	ImGui::SetWindowPos(ImVec2(10, 10));
 
@@ -1179,18 +1127,18 @@ static void ShowPlayerHacks(){
 	ImGui::SetTooltip("Kills the player.");
 
 
-	/* ImGui::Checkbox("Accurate Percentage", &AccuratePercentageEnabled);
+	ImGui::Checkbox("Accurate Percentage", &AccuratePercentageEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Allows for decimals in the level percentage.");
-	if (AccuratePercentageEnabled)
-	{
-		WriteBytes((void*)(gd::base + 0x2080FE), {0xC7, 0x02, 0x25, 0x66, 0x25, 0x25, 0x8B, 0x87, 0xC0, 0x03, 0x00, 0x00, 0x8B, 0xB0, 0x04, 0x01, 0x00, 0x00, 0xF3, 0x0F, 0x5A, 0xC0, 0x83, 0xEC, 0x08, 0xF2, 0x0F, 0x11, 0x04, 0x24, 0x83, 0xEC, 0x04, 0x89, 0x14, 0x24, 0x90});
-		WriteBytes((void*)(gd::base + 0x20813F), {0x83, 0xC4, 0x0C});
-	} else {
-		WriteBytes((void*)(gd::base + 0x2080FE), {0xF3, 0x0F, 0x2C, 0xC0, 0x85, 0xC0, 0x0F, 0x4F, 0xC8, 0xB8, 0x64, 0x00, 0x00, 0x00, 0x3B, 0xC8, 0x0F, 0x4F, 0xC8, 0x8B, 0x87, 0xC0, 0x03, 0x00, 0x00, 0x51, 0x68, 0x30, 0x32, 0x69, 0x00, 0x8B, 0xB0, 0x04, 0x01, 0x00, 0x00});
-		WriteBytes((void*)(gd::base + 0x20813F), {0x83, 0xC4, 0x08});
-	}
-	
+
+	ImGui::Checkbox("Only percentage", &OnlyPercentageEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Disables progress bar");
+
+
+
+
+	/*
 	ImGui::Checkbox("Instant Complete", &InstantCompleteEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Teleports the player to the end of a level, also know as the teleport hack.");
@@ -1208,7 +1156,7 @@ static void ShowPlayerHacks(){
 
 }
 static void ShowCreatorHacks(){
-	ImGui::Begin("Creator");
+	ImGui::Begin("Creator", NULL, ImGuiWindowFlags_NoMove);
 
 	ImGui::SetWindowSize(ImVec2(210, 400));
 	ImGui::SetWindowPos(ImVec2(230, 10));
@@ -1284,8 +1232,8 @@ static void ShowGlobalHacks(){
 		return;
 }
 static void ShowBypassHacks(){
-	ImGui::Begin("Bypass");
-	ImGui::SetWindowSize(ImVec2(210, 360));
+	ImGui::Begin("Bypass", NULL, ImGuiWindowFlags_NoMove);
+	ImGui::SetWindowSize(ImVec2(210, 430));
 	ImGui::SetWindowPos(ImVec2(450, 10));
 	ImGui::Checkbox("Icons", &IconsEnabled);
 	if (ImGui::IsItemHovered())
@@ -1341,9 +1289,9 @@ static void ShowBypassHacks(){
 	ImGui::End();
 }
 static void ShowSpeedhack(){
-	ImGui::Begin("Speedhack");
+	ImGui::Begin("Speedhack", NULL, ImGuiWindowFlags_NoMove);
 	ImGui::SetWindowSize(ImVec2(210, 110));
-	ImGui::SetWindowPos(ImVec2(10, 380));
+	ImGui::SetWindowPos(ImVec2(10, 400));
 	
 	if (GetAsyncKeyState(VK_F2) & 5)
 	{
@@ -1369,36 +1317,43 @@ static void ShowSpeedhack(){
 	ImGui::End();
 }
 static void ShowFPSBypass(){
-	ImGui::Begin("FPS Bypass");
-	ImGui::SetWindowSize(ImVec2(210, 110));
+	ImGui::Begin("FPS Bypass", NULL, ImGuiWindowFlags_NoMove);
+	ImGui::SetWindowSize(ImVec2(210, 80));
 	ImGui::SetWindowPos(ImVec2(230, 420));
 
+	ImGui::InputFloat("FPS", &interval, 10.f, 20.f, "%.1f");
 	ImGui::Checkbox("Enabled", &FPSBypassEnabled);
-	ImGui::SameLine();
-	ImGui::InputFloat("", &interval, 10.f, 20.f, "%.1f");
 
 	ImGui::End();
 }
 
-static void ShowUtilities(){
-	if(!ImGui::CollapsingHeader("Utilities"))
-	return;
-
-	if (ImGui::Button("Inject Dll")) {
+static void ShowStatus(){
+	ImGui::Begin("Status", NULL, ImGuiWindowFlags_NoMove);
+	ImGui::SetWindowSize(ImVec2(210, 84));
+	ImGui::SetWindowPos(ImVec2(670, 10));
+	ImGui::Checkbox("Enable NoClip Accuracy", &NoClipAccEnabled);
+	ImGui::Checkbox("Enable FPS Counter", &FPSCounterEnabled);
+	/* if (ImGui::Button("Inject Dll")) {
     std::string stringpath = chooseDLL();
-	HMODULE h = LoadLibraryW(LPCWSTR(stringpath.c_str()));
-	}
-}
-static void ShowCustomization(){
-	if (!ImGui::CollapsingHeader("Customization"))
-		return;
-	ImGui::Checkbox("Random Icons", &RandomIconsEnabled);
-
+    const char* DllPath = stringpath.c_str();
+    HWND hWnd = FindWindow(0, "Geometry Dash");
+        DWORD proccess_ID;
+        GetWindowThreadProcessId(hWnd, &proccess_ID);
+        HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, proccess_ID);
+        LPVOID pDllPath = VirtualAllocEx(hProcess, 0, strlen(DllPath) + 1,
+        MEM_COMMIT, PAGE_READWRITE);
+        WriteProcessMemory(hProcess, pDllPath, (LPVOID)DllPath,
+        strlen(DllPath) + 1, 0);
+        HANDLE hLoadThread = CreateRemoteThread(hProcess, 0, 0,
+        (LPTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandleA("Kernel32.dll"), "LoadLibraryA"), pDllPath, 0, 0);
+        WaitForSingleObject(hLoadThread, INFINITE);     
+		VirtualFreeEx(hProcess, pDllPath, strlen(DllPath) + 1, MEM_RELEASE);
+	} */
+	ImGui::End();
 }
 
 static void ShowDeveloper(){
-	if (!ImGui::CollapsingHeader("Developer options"))
-	return;
+	ImGui::Begin("Developer options");
 
 	ImGui::Checkbox("Show Demo Window", &showDemoWindow);
 	if (showDemoWindow)
@@ -1411,36 +1366,59 @@ static void ShowDeveloper(){
 	if(ImGui::Button("Load hacks")){
 		loadHacks();
 	}
-	ImGui::Checkbox("Enable NoClip Accuracy", &NoClipAccEnabled);
+	
 
 	ImGui::Separator();
 	ImGui::Checkbox("Enable FPS Counter", &FPSCounterEnabled);
-	ImGui::Checkbox("Enable CPS Counter", &CPSCounterEnabled);
-
-	ImGui::Checkbox("Enable FPS Counter (Using game resources)", &TestingFPSCounterEnabled);
-	ImGui::Checkbox("Enable CPS Counter (Using game resources)", &TestingCPSCounterEnabled);
 
 	ImGui::Separator();
 	ImGui::Checkbox("Show about window", &showAbout);
 	
 }
+static void ShowAboutWindow(){
+	ImGui::Begin("About Mod Menu", NULL, ImGuiWindowFlags_NoMove);
+	ImGui::SetWindowSize(ImVec2(210, 200));
+	ImGui::SetWindowPos(ImVec2(670, 104));
+    ImGui::Text("Mod Menu %s", VERSION);
+    ImGui::Separator();
+    ImGui::Text("By Alexandr Simonov");
+    ImGui::Text("Mod Menu is licensed\nunder the MIT License.");
+	ImGui::Separator();
+	ImGui::Text("Used libraries: ");
+	ImGui::Text("ImGui: %s", ImGui::GetVersion());
+	ImGui::Text("MinHook: %s", "1.3.3");
+	ImGui::Text("SimpleIni: %s", "4.19");
 
+	if(ImGui::Button("View on GitHub"))
+	{
+		ShellExecute(0, 0, LPCSTR("https://github.com/OneParsec/GD-ModMenu"), 0, 0 , SW_SHOW );
+	}
+}
 
+static void disableAnticheat()
+{
+	WriteBytes((void*)(gd::base + 0x202AAA), { 0xEB, 0x2E }),
+	WriteBytes((void*)(gd::base + 0x15FC2E), { 0xEB }),
+	WriteBytes((void*)(gd::base + 0x20D3B3), { 0x90, 0x90, 0x90, 0x90, 0x90 }),
+	WriteBytes((void*)(gd::base + 0x1FF7A2), { 0x90, 0x90 }),
+	WriteBytes((void*)(gd::base + 0x18B2B4), { 0xB0, 0x01 }),
+	WriteBytes((void*)(gd::base + 0x20C4E6), { 0xE9, 0xD7, 0x00, 0x00, 0x00, 0x90 }),
+	WriteBytes((void*)(gd::base + 0x1FD557), { 0xEB, 0x0C }),
+	WriteBytes((void*)(gd::base + 0x1FD742), { 0xC7, 0x87, 0xE0, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0xC7, 0x87, 0xE4, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 }),
+	WriteBytes((void*)(gd::base + 0x1FD756), { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 }),
+	WriteBytes((void*)(gd::base + 0x1FD79A), { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 }),
+	WriteBytes((void*)(gd::base + 0x1FD7AF), { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 });
+}
 
 void MainWindow()
 {	
-	ImGui::Begin("Mod Menu", 0/*, ImGuiWindowFlags_NoResize*/ );
-	/* ImGui::SetWindowSize(ImVec2(273.f,484.f)); */
-	const bool enable_touch = !ImGui::GetIO().WantCaptureMouse || !show;
-	cocos2d::CCDirector::sharedDirector()->getTouchDispatcher()->setDispatchEvents(enable_touch);
 	ShowPlayerHacks();
 	ShowCreatorHacks();
-	ShowGlobalHacks();
 	ShowBypassHacks();
 	ShowSpeedhack();
 	ShowFPSBypass();
-	ShowUtilities();
-	ShowCustomization();
+	ShowStatus();
+	ShowAboutWindow();
 	if (DEVELOPER_MODE)
 	{
 		ShowDeveloper();
@@ -1451,10 +1429,13 @@ void MainWindow()
 
 void MainThread() 
 {
+	const bool enable_touch = !ImGui::GetIO().WantCaptureMouse || !show;
+	cocos2d::CCDirector::sharedDirector()->getTouchDispatcher()->setDispatchEvents(enable_touch);
 	SpeedhackAudio::init();
 	LoadingLayer::mem_init();
 	PlayLayer::mem_init();
 	checkHacks();
+	disableAnticheat();
 	DEVMODE dm;
 	EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm);
 	if (FPSBypassEnabled)

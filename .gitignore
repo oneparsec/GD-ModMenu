@@ -3,3 +3,4 @@ genhack.py
 configure.bat
 build.bat
 commit.bat
+/.vscode
