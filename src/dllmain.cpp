@@ -1386,22 +1386,7 @@ static void ShowUtilities(){
 
 	if (ImGui::Button("Inject Dll")) {
     std::string stringpath = chooseDLL();
-    const char* DllPath = stringpath.c_str();
-    HWND hWnd = FindWindow(0, "Geometry Dash");
-        DWORD proccess_ID;
-        GetWindowThreadProcessId(hWnd, &proccess_ID);
-        HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, proccess_ID);
-        LPVOID pDllPath = VirtualAllocEx(hProcess, 0, strlen(DllPath) + 1,
-        MEM_COMMIT, PAGE_READWRITE);
-        WriteProcessMemory(hProcess, pDllPath, (LPVOID)DllPath,
-        strlen(DllPath) + 1, 0);
-        HANDLE hLoadThread = CreateRemoteThread(hProcess, 0, 0,
-        (LPTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandleA("Kernel32.dll"), "LoadLibraryA"), pDllPath, 0, 0);
-        WaitForSingleObject(hLoadThread, INFINITE);     
-		if (VirtualFreeEx(hProcess, pDllPath, strlen(DllPath) + 1, MEM_RELEASE))
-		{
-			MessageBoxA(NULL, "DLL successfully injected","DLL Injection", MB_ICONINFORMATION);
-		}
+	HMODULE h = LoadLibraryW(LPCWSTR(stringpath.c_str()));
 	}
 }
 static void ShowCustomization(){
