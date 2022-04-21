@@ -1,3 +1,13 @@
+/*
+Special thanks:
+Absolute
+HJFod
+Matcool
+Pixelsaft
+Adaf
+TobyAdd
+*/
+
 #define DEVELOPER_MODE TRUE
 #define VERSION "DEV_RELEASE"
 
@@ -479,6 +489,52 @@ namespace PlayLayer {
 
 	void mem_init();
 
+}
+
+namespace LoadingLayer {
+	
+	static inline void (__thiscall* init_)(cocos2d::CCLayer*, char);
+    static void __fastcall initHook(cocos2d::CCLayer*, void*, char);
+
+	void mem_init();
+
+}
+
+void __fastcall LoadingLayer::initHook(cocos2d::CCLayer* _layer, void*, char _bool) {
+    init_(_layer, _bool);
+
+    std::stringstream infoText;
+
+    infoText << "ModMenu " << VERSION;
+    auto label = cocos2d::CCLabelBMFont::create(
+        infoText.str().c_str(),
+        "goldFont.fnt"
+    );
+
+    label->setScale(.4f);
+
+    auto winSize = cocos2d::CCDirector::sharedDirector()->getWinSize();
+
+    label->setPosition(
+        winSize.width / 2,
+        20
+    );
+
+    _layer->addChild(label);
+
+    return;
+}
+
+void LoadingLayer::mem_init() {
+	MH_Initialize();
+
+	size_t base = reinterpret_cast<size_t>(GetModuleHandle(0));
+	MH_CreateHook(
+		(PVOID)(base + 0x18c080),
+		LoadingLayer::initHook,
+		(LPVOID*)&LoadingLayer::init_
+	);
+	MH_EnableHook(MH_ALL_HOOKS);
 }
 
 
@@ -1411,6 +1467,7 @@ void MainWindow()
 void MainThread() 
 {
 	SpeedhackAudio::init();
+	LoadingLayer::mem_init();
 	PlayLayer::mem_init();
 	checkHacks();
 	DEVMODE dm;
