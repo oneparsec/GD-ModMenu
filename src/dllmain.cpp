@@ -9,7 +9,7 @@ TobyAdd
 fig
 */
 
-#define DEVELOPER_MODE FALSE
+#define DEVELOPER_MODE TRUE
 #define VERSION "DEV_RELEASE"
 
 #ifdef _MSC_VER
@@ -41,78 +41,76 @@ static bool showDemoWindow = false;
 
 static struct
 {
-	/* data */
-} settings;
+	bool speedhackEnabled;
+	bool speedhackAudioEnabled;
+	// player
+	bool NoClipEnabled;
+	bool NoSpikesEnabled;
+	bool ForceBlockTypeEnabled;
+	bool EverythingHurtsEnabled;
+	bool FreezePlayerEnabled;
+	bool JumpHackEnabled;
+	bool ForceTrailStateEnabled;
+	bool InversedTrailEnabled;
+	bool HideAttemptsEnabled;
+	bool PracticeMusicHackEnabled;
+	bool NoPulseEnabled;
+	bool IgnoreESCEnabled;
+	bool SuicideEnabled;
+	bool AccuratePercentageEnabled;
+	bool OnlyPercentageEnabled;
+	bool NoParticlesEnabled;
+	bool InstantCompleteEnabled;
+	// creator
+	bool CopyHackEnabled;
+	bool NoCMarkEnabled;
+	bool LevelEditEnabled;
+	bool ObjectBypassEnabled;
+	bool CustomObjectBypassEnabled;
+	bool ZoomBypassEnabled;
+	bool ToolboxButtonBypassEnabled;
+	bool VerifyHackEnabled;
+	bool DefaultSongBypassEnabled;
+	bool EditorExtensionEnabled;
+	bool PlaceOverEnabled;
+	bool TestmodeBypassEnabled;
+	bool RotationHackEnabled;
+	bool FreeScrollEnabled;
+	bool HideUIEnabled;
+	bool ZOrderBypassEnabled;
+	// fps bypass
+	bool FPSBypassEnabled;
+	float interval = 60.f;
+	// speedhack
+	int currentPlace = 0;
+	float speed = 1.f;
+	float f1_offset = 0.5f;
+	float f2_offset = 0.5f;
+	// bypass
+	bool SongBypassEnabled;
+	bool IconsEnabled;
+	bool TextLengthEnabled;
+	bool CharacterFilterEnabled;
+	bool SliderLimitEnabled;
+	bool MainLevelsEnabled;
+	bool GuardVaultEnabled;
+	bool KeymasterVaultEnabled;
+	bool KeymasterBasementEnabled;
+	bool BasementKeyBypassEnabled;
+	bool ChallengeBypassEnabled;
+	bool TreasureRoomEnabled;
+	bool PotborShopEnabled;
+	bool ScratchShopEnabled;
+	bool FreeShopItemsEnabled;
+	bool GatekeeperVaultEnabled;
+	bool BackupStarsLimitEnabled;
+	bool UnblockHackEnabled;
+	// utilities
+	bool NoClipAccEnabled;
+	bool FPSCounterEnabled;
+} setting;
 
-static bool speedhackEnabled;
-static bool speedhackAudioEnabled;
-// player
-static bool NoClipEnabled;
-static bool NoSpikesEnabled;
-static bool NoHitboxEnabled;
-static bool NoSolidsEnabled;
-static bool ForceBlockTypeEnabled;
-static bool EverythingHurtsEnabled;
-static bool FreezePlayerEnabled;
-static bool JumpHackEnabled;
-static bool ForceTrailStateEnabled;
-static bool InversedTrailEnabled;
-static bool HideAttemptsEnabled;
-static bool PracticeMusicHackEnabled;
-static bool NoPulseEnabled;
-static bool IgnoreESCEnabled;
-static bool SuicideEnabled;
-static bool AccuratePercentageEnabled;
-static bool OnlyPercentageEnabled;
-static bool NoParticlesEnabled;
-static bool InstantCompleteEnabled;
-// creator
-static bool CopyHackEnabled;
-static bool NoCMarkEnabled;
-static bool LevelEditEnabled;
-static bool ObjectBypassEnabled;
-static bool CustomObjectBypassEnabled;
-static bool ZoomBypassEnabled;
-static bool ToolboxButtonBypassEnabled;
-static bool VerifyHackEnabled;
-static bool DefaultSongBypassEnabled;
-static bool EditorExtensionEnabled;
-static bool PlaceOverEnabled;
-static bool TestmodeBypassEnabled;
-static bool RotationHackEnabled;
-static bool FreeScrollEnabled;
-static bool HideUIEnabled;
-static bool ZOrderBypassEnabled;
-// fps bypass
-static bool FPSBypassEnabled;
-static float interval = 60.f;
-// speedhack
-static int currentPlace = 0;
-static float speed = 1.f;
-static float f1_offset = 0.5f;
-static float f2_offset = 0.5f;
-// bypass
-static bool SongBypassEnabled;
-static bool IconsEnabled;
-static bool TextLengthEnabled;
-static bool CharacterFilterEnabled;
-static bool SliderLimitEnabled;
-static bool MainLevelsEnabled;
-static bool GuardVaultEnabled;
-static bool KeymasterVaultEnabled;
-static bool KeymasterBasementEnabled;
-static bool BasementKeyBypassEnabled;
-static bool ChallengeBypassEnabled;
-static bool TreasureRoomEnabled;
-static bool PotborShopEnabled;
-static bool ScratchShopEnabled;
-static bool FreeShopItemsEnabled;
-static bool GatekeeperVaultEnabled;
-static bool BackupStarsLimitEnabled;
-static bool UnblockHackEnabled;
-// utilities
-static bool NoClipAccEnabled;
-static bool FPSCounterEnabled;
+
 
 
 static char license[1067]= "MIT License\nCopyright (c) 2022 Alexandr Simonov\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the ""Software""), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.";
@@ -248,183 +246,27 @@ uint32_t cocosBase = GetModuleBase("libcocos2d.dll");
 
 void saveHacks()
 {
-
-
-
-	ini.SetUnicode();
-	ini.SetBoolValue("player","NoClipEnabled", NoClipEnabled);
-	ini.SetBoolValue("player","NoSpikesEnabled", NoSpikesEnabled);
-	ini.SetBoolValue("player","EverythingHurtsEnabled", EverythingHurtsEnabled);
-	ini.SetBoolValue("player","FreezePlayerEnabled", FreezePlayerEnabled);
-	ini.SetBoolValue("player","JumpHackEnabled", JumpHackEnabled);
-	ini.SetBoolValue("player","ForceTrailStateEnabled", ForceTrailStateEnabled);
-	ini.SetBoolValue("player","HideAttemptsEnabled", HideAttemptsEnabled);
-	ini.SetBoolValue("player","PracticeMusicHackEnabled", PracticeMusicHackEnabled);
-	ini.SetBoolValue("player","NoPulseEnabled", NoPulseEnabled);
-	ini.SetBoolValue("player","IgnoreESCEnabled", IgnoreESCEnabled);
-	ini.SetBoolValue("player","SuicideEnabled", SuicideEnabled);
-	ini.SetBoolValue("player","AccuratePercentageEnabled", AccuratePercentageEnabled);
-	ini.SetBoolValue("player","NoParticlesEnabled", NoParticlesEnabled);
-	ini.SetBoolValue("player", "OnlyPercentageEnabled", OnlyPercentageEnabled);
-
-
-	ini.SetBoolValue("creator","CopyHackEnabled", CopyHackEnabled);
-	ini.SetBoolValue("creator","NoCMarkEnabled", NoCMarkEnabled);
-	ini.SetBoolValue("creator","LevelEditEnabled", LevelEditEnabled);
-	ini.SetBoolValue("creator","ObjectBypassEnabled", ObjectBypassEnabled);
-	ini.SetBoolValue("creator","CustomObjectBypassEnabled", CustomObjectBypassEnabled);
-	ini.SetBoolValue("creator","ZoomBypassEnabled", ZoomBypassEnabled);
-	ini.SetBoolValue("creator","ToolboxButtonBypassEnabled", ToolboxButtonBypassEnabled);
-	ini.SetBoolValue("creator","VerifyHackEnabled", VerifyHackEnabled);
-	ini.SetBoolValue("creator","DefaultSongBypassEnabled", DefaultSongBypassEnabled);
-	ini.SetBoolValue("creator","EditorExtensionEnabled", EditorExtensionEnabled);
-	ini.SetBoolValue("creator","PlaceOverEnabled", PlaceOverEnabled);
-	ini.SetBoolValue("creator","TestmodeBypassEnabled", TestmodeBypassEnabled);
-	ini.SetBoolValue("creator","RotationHackEnabled", RotationHackEnabled);
-	ini.SetBoolValue("creator","FreeScrollEnabled", FreeScrollEnabled);
-	ini.SetBoolValue("creator","HideUIEnabled", HideUIEnabled);
-	ini.SetBoolValue("creator","ZOrderBypassEnabled", ZOrderBypassEnabled);
-
-	ini.SetBoolValue("fps-bypass","FPSBypassEnabled",FPSBypassEnabled);
-	ini.SetDoubleValue("fps-bypass","TargetFPS",(double)interval);
-	
-	ini.SetBoolValue("bypass","IconsEnabled",IconsEnabled);
-	ini.SetBoolValue("bypass", "TextLengthEnabled", TextLengthEnabled);
-	ini.SetBoolValue("bypass", "CharacterFilterEnabled", CharacterFilterEnabled);
-	ini.SetBoolValue("bypass", "SliderLimitEnabled", SliderLimitEnabled);
-	ini.SetBoolValue("bypass", "MainLevelsEnabled", MainLevelsEnabled);
-	ini.SetBoolValue("bypass", "GuardVaultEnabled", GuardVaultEnabled);
-	ini.SetBoolValue("bypass", "KeymasterVaultEnabled", KeymasterVaultEnabled);
-	ini.SetBoolValue("bypass", "KeymasterBasementEnabled", KeymasterBasementEnabled);
-	ini.SetBoolValue("bypass", "BasementKeyBypassEnabled", BasementKeyBypassEnabled);
-	ini.SetBoolValue("bypass", "ChallengeBypassEnabled", ChallengeBypassEnabled);
-	ini.SetBoolValue("bypass", "TreasureRoomEnabled", TreasureRoomEnabled);
-	ini.SetBoolValue("bypass", "PotborShopEnabled", PotborShopEnabled);
-	ini.SetBoolValue("bypass", "ScratchShopEnabled", ScratchShopEnabled);
-	ini.SetBoolValue("bypass", "FreeShopItemsEnabled", FreeShopItemsEnabled);
-	ini.SetBoolValue("bypass", "GatekeeperVaultEnabled", GatekeeperVaultEnabled);
-	ini.SetBoolValue("bypass", "BackupStarsLimitEnabled", BackupStarsLimitEnabled);
-	ini.SetBoolValue("bypass", "UnblockHackEnabled", UnblockHackEnabled);
-	ini.SaveFile("save.ini");
-	
-	
-	/* 	ImGui::Checkbox("Icons", &IconsEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Unlocks all icons.");
-	ImGui::Checkbox("Text Length", &TextLengthEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Allows for unlimited text length in text inputs.");
-	ImGui::Checkbox("Character Filter", &CharacterFilterEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Lets you input any character in all text inputs.");
-	ImGui::Checkbox("Slider Limit", &SliderLimitEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Lets sliders be dragged beyond the visible limit.");
-	ImGui::Checkbox("Main Levels", &MainLevelsEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Unlocks locked demon levels.");
-	ImGui::Checkbox("Guard Vault", &GuardVaultEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Unlocks the guard's vault.");
-	ImGui::Checkbox("Keymaster Vault", &KeymasterVaultEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Unlocks the keymaster's vault.");
-	ImGui::Checkbox("Keymaster Basement", &KeymasterBasementEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Unlocks the keymaster's basement.");
-	ImGui::Checkbox("Basement Key Bypass", &BasementKeyBypassEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Lets you unlock the locks in the basement.");
-	ImGui::Checkbox("Challenge Bypass", &ChallengeBypassEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Unlocks 'The Challenge' level.");
-	ImGui::Checkbox("Treasure Room", &TreasureRoomEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Unlocks the treasure room.");
-	ImGui::Checkbox("Potbor Shop", &PotborShopEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Unlocks Potbor's shop in the treasure room.");
-	ImGui::Checkbox("Scratch Shop", &ScratchShopEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Unlocks Scratch's shop in the treasure room.");
-	ImGui::Checkbox("Free Shop Items", &FreeShopItemsEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Allows all shop items to be bought for 0 mana orbs.");
-	ImGui::Checkbox("Gatekeeper Vault", &GatekeeperVaultEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Unlocks the Gatekeeper's vault.");
-	ImGui::Checkbox("Backup Stars Limit", &BackupStarsLimitEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Lets you backup data, even with less than 10 stars.");
-	ImGui::Checkbox("Unblock Hack", &UnblockHackEnabled);
-	if (ImGui::IsItemHovered())
-	ImGui::SetTooltip("Lets you view profiles of users who have blocked you."); */
-
-
-
+	auto file = fopen("mod-menu.dat", "wb");
+	if (file) {
+		fwrite(&setting, sizeof(setting), 1, file);
+		fclose(file);
+	}
 
 }
 
 void loadHacks(){
-	SI_Error rc = ini.LoadFile("save.ini");
-	if (rc<0)
-	{
-		MessageBoxA(NULL, "Failed to load save file. It will be created.", "Error occured", MB_ICONERROR);
-		ofstream of("save.ini",ios::app);
-		of << endl;
+
+	auto file = fopen("mod-menu.dat", "rb");
+	if (file) {
+		fseek(file, 0, SEEK_END);
+		auto size = ftell(file);
+
+		if (size == sizeof(setting)) {
+			fseek(file, 0, SEEK_SET);
+			fread(&setting, sizeof(setting), 1, file);
+			fclose(file);
+		}
 	}
-	NoClipEnabled                         = ini.GetBoolValue("player","NoClipEnabled");
-	NoSpikesEnabled                     = ini.GetBoolValue("player","NoSpikesEnabled");
-	EverythingHurtsEnabled       = ini.GetBoolValue("player","EverythingHurtsEnabled");
-	FreezePlayerEnabled             = ini.GetBoolValue("player","FreezePlayerEnabled");
-	JumpHackEnabled                     = ini.GetBoolValue("player","JumpHackEnabled");
-	ForceTrailStateEnabled       = ini.GetBoolValue("player","ForceTrailStateEnabled");
-	HideAttemptsEnabled             = ini.GetBoolValue("player","HideAttemptsEnabled");
-	PracticeMusicHackEnabled   = ini.GetBoolValue("player","PracticeMusicHackEnabled");
-	NoPulseEnabled                       = ini.GetBoolValue("player","NoPulseEnabled");
-	IgnoreESCEnabled                   = ini.GetBoolValue("player","IgnoreESCEnabled");
-	SuicideEnabled                       = ini.GetBoolValue("player","SuicideEnabled");
-	AccuratePercentageEnabled = ini.GetBoolValue("player", "AccuratePercentageEnabled");
-	NoParticlesEnabled               = ini.GetBoolValue("player","NoParticlesEnabled");
-	OnlyPercentageEnabled = ini.GetBoolValue("player", "OnlyPercentageEnabled");
-	
-	CopyHackEnabled =                       ini.GetBoolValue("creator", "CopyHackEnabled");
-	NoCMarkEnabled =                         ini.GetBoolValue("creator", "NoCMarkEnabled");
-	LevelEditEnabled =                     ini.GetBoolValue("creator", "LevelEditEnabled");
-	ObjectBypassEnabled =               ini.GetBoolValue("creator", "ObjectBypassEnabled");
-	CustomObjectBypassEnabled =   ini.GetBoolValue("creator", "CustomObjectBypassEnabled");
-	ZoomBypassEnabled =                   ini.GetBoolValue("creator", "ZoomBypassEnabled");
-	ToolboxButtonBypassEnabled = ini.GetBoolValue("creator", "ToolboxButtonBypassEnabled");
-	VerifyHackEnabled =                   ini.GetBoolValue("creator", "VerifyHackEnabled");
-	DefaultSongBypassEnabled =     ini.GetBoolValue("creator", "DefaultSongBypassEnabled");
-	EditorExtensionEnabled =         ini.GetBoolValue("creator", "EditorExtensionEnabled");
-	PlaceOverEnabled =                     ini.GetBoolValue("creator", "PlaceOverEnabled");
-	TestmodeBypassEnabled =           ini.GetBoolValue("creator", "TestmodeBypassEnabled");
-	RotationHackEnabled =               ini.GetBoolValue("creator", "RotationHackEnabled");
-	FreeScrollEnabled =                   ini.GetBoolValue("creator", "FreeScrollEnabled");
-	HideUIEnabled =                           ini.GetBoolValue("creator", "HideUIEnabled");
-	ZOrderBypassEnabled =               ini.GetBoolValue("creator", "ZOrderBypassEnabled");
-
-	FPSBypassEnabled = ini.GetBoolValue("fps-bypass","FPSBypassEnabled");
-	interval = (float)ini.GetDoubleValue("fps-bypass","TargetFPS");
-
-	IconsEnabled  = ini.GetBoolValue("bypass", "IconsEnabled");
-	TextLengthEnabled = ini.GetBoolValue("bypass", "TextLengthEnabled");
-	CharacterFilterEnabled = ini.GetBoolValue("bypass", "CharacterFilterEnabled");
-	SliderLimitEnabled = ini.GetBoolValue("bypass", "SliderLimitEnabled");
-	MainLevelsEnabled = ini.GetBoolValue("bypass", "MainLevelsEnabled");
-	GuardVaultEnabled = ini.GetBoolValue("bypass", "GuardVaultEnabled");
-	KeymasterVaultEnabled = ini.GetBoolValue("bypass", "KeymasterVaultEnabled");
-	KeymasterBasementEnabled = ini.GetBoolValue("bypass", "KeymasterBasementEnabled");
-	BasementKeyBypassEnabled = ini.GetBoolValue("bypass", "BasementKeyBypassEnabled");
-	ChallengeBypassEnabled = ini.GetBoolValue("bypass", "ChallengeBypassEnabled");
-	TreasureRoomEnabled = ini.GetBoolValue("bypass", "TreasureRoomEnabled");
-	PotborShopEnabled = ini.GetBoolValue("bypass", "PotborShopEnabled");
-	ScratchShopEnabled = ini.GetBoolValue("bypass", "ScratchShopEnabled");
-	FreeShopItemsEnabled = ini.GetBoolValue("bypass", "FreeShopItemsEnabled");
-	GatekeeperVaultEnabled = ini.GetBoolValue("bypass", "GatekeeperVaultEnabled");
-	BackupStarsLimitEnabled = ini.GetBoolValue("bypass", "BackupStarsLimitEnabled");
-	UnblockHackEnabled = ini.GetBoolValue("bypass", "UnblockHackEnabled");
 }
 
 void SetTargetFPS(float interval){
@@ -585,12 +427,11 @@ void __fastcall PlayLayer::togglePracticeHook(void* self, int edx, bool practice
 	return PlayLayer::togglePractice(self, practice);
 }
 int __fastcall PlayLayer::deathHook(void* self, void*, void* go, void* powerrangers) {
-	if (!NoClipEnabled)
+	if (!setting.NoClipEnabled)
 	{
 		totalClicks = 0;
 	}
-
-	if (NoClipEnabled)
+	if (setting.NoClipEnabled)
 	{
 		noclipacc.wouldDie = true;
 	}
@@ -613,7 +454,7 @@ void __fastcall PlayLayer::updateHook(cocos2d::CCLayer* self, void* edx, float d
 	CCLabelBMFont* textObj = (CCLabelBMFont*)self->getChildByTag(4000);
 	CCLabelBMFont* textObj2 = (CCLabelBMFont*)self->getChildByTag(4001);
 	
-	if (NoClipAccEnabled) {
+	if (setting.NoClipAccEnabled) {
 		auto size = textObj->getScaledContentSize();
 		textObj->setPosition({ size.width / 2 + 3, size.height / 2 + 3});
 		textObj->setString(getAccuracyText().c_str());
@@ -630,9 +471,9 @@ void __fastcall PlayLayer::updateHook(cocos2d::CCLayer* self, void* edx, float d
 	noclipacc.prevX = x;
 
 
-	if (FPSCounterEnabled)
+	if (setting.FPSCounterEnabled)
 	{
-		if (NoClipAccEnabled)
+		if (setting.NoClipAccEnabled)
 		{
 			auto size = textObj2->getScaledContentSize();
 			textObj2->setPosition({ size.width / 2 + 3, size.height / 2 + 16});
@@ -714,49 +555,49 @@ void PlayLayer::mem_init() {
 
 
 void checkHacks(){
-	if (NoClipEnabled){
+	if (setting.NoClipEnabled){
 	WriteBytes((void*)(gd::base + 0x20A23C), {0xE9, 0x79, 0x06, 0x00, 0x00});
 	} else {
 		WriteBytes((void*)(gd::base + 0x20A23C), {0x6A, 0x14, 0x8B, 0xCB, 0xFF});
 	}
-	if (NoSpikesEnabled){
+	if (setting.NoSpikesEnabled){
 		WriteBytes((void*)(gd::base + 0x205347), {0x75, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x205347), {0x74, });
 	}
-	if (ForceBlockTypeEnabled){
+	if (setting.ForceBlockTypeEnabled){
 		WriteBytes((void*)(gd::base + 0x20456D), {0x31, 0xC0, 0x83, 0x7B, 0x34, 0x00, 0xBA, 0x07, 0x00, 0x00, 0x00, 0x0F, 0x44, 0xC2, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x20456D), {0x8B, 0x83, 0x00, 0x03, 0x00, 0x00, 0x83, 0xF8, 0x07, 0x0F, 0x84, 0x7F, 0x0A, 0x00, 0x00, });
 	}
-	if (EverythingHurtsEnabled){
+	if (setting.EverythingHurtsEnabled){
 		WriteBytes((void*)(gd::base + 0x20456D), {0xB8, 0x02, 0x00, 0x00, 0x00, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x20456D), {0x8B, 0x83, 0x00, 0x03, 0x00, 0x00, });
 	}
-	if (FreezePlayerEnabled){
+	if (setting.FreezePlayerEnabled){
 		WriteBytes((void*)(gd::base + 0x203519), {0x90, 0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x203519), {0x50, 0xFF, 0xD6, });
 	}
-	if (JumpHackEnabled){
+	if (setting.JumpHackEnabled){
 		WriteBytes((void*)(gd::base + 0x1E9141), {0x01, });
 		WriteBytes((void*)(gd::base + 0x1E9498), {0x01, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x1E9141), {0x00, });
 		WriteBytes((void*)(gd::base + 0x1E9498), {0x00, });
 	}
-	if (ForceTrailStateEnabled){
+	if (setting.ForceTrailStateEnabled){
 		WriteBytes((void*)(cocosBase + 0xAEDCC), {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(cocosBase + 0xAEDCC), {0x0F, 0x84, 0x68, 0x02, 0x00, 0x00, });
 	}
-	if (HideAttemptsEnabled){
+	if (setting.HideAttemptsEnabled){
 		WriteBytes((void*)(gd::base + 0x2D83B8), {0x00});
 	} else {
 		WriteBytes((void*)(gd::base + 0x2D83B8), {0x41});
 	}
-	if (PracticeMusicHackEnabled){
+	if (setting.PracticeMusicHackEnabled){
 		WriteBytes((void*)(gd::base + 0x20C925), {0x90, 0x90, 0x90, 0x90, 0x90, 0x90});
 		WriteBytes((void*)(gd::base + 0x20D143), {0x90, 0x90});
 		WriteBytes((void*)(gd::base + 0x20A563), {0x90, 0x90});
@@ -767,29 +608,29 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x20A563), {0x75, 0x3E});
 		WriteBytes((void*)(gd::base + 0x20A595), {0x75, 0x0C});
 	}
-	if (NoPulseEnabled){
+	if (setting.NoPulseEnabled){
 		WriteBytes((void*)(gd::base + 0x2060D9), {0xEB, 0x4A, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x2060D9), {0x74, 0x4A, });
 	}
-	if (IgnoreESCEnabled){
+	if (setting.IgnoreESCEnabled){
 		WriteBytes((void*)(gd::base + 0x1E644C), {0x90, 0x90, 0x90, 0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x1E644C), {0xE8, 0xBF, 0x73, 0x02, 0x00, });
 	}
-	if (SuicideEnabled){
+	if (setting.SuicideEnabled){
 		WriteBytes((void*)(gd::base + 0x203DA2), {0xE9, 0x57, 0x02, 0x00, 0x00, 0x90, });
 		WriteBytes((void*)(gd::base + 0x20401A), {0xE9, 0x27, 0x02, 0x00, 0x00, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x203DA2), {0x0F, 0x86, 0x56, 0x02, 0x00, 0x00, });
 		WriteBytes((void*)(gd::base + 0x20401A), {0x0F, 0x87, 0x26, 0x02, 0x00, 0x00, });
 	}
-	if (NoParticlesEnabled){
+	if (setting.NoParticlesEnabled){
 		WriteBytes((void*)(cocosBase + 0xB8ED6), {0x00});
 	} else {
 		WriteBytes((void*)(cocosBase + 0xB8ED6), {0x01});
 	}
-	if (CopyHackEnabled){
+	if (setting.CopyHackEnabled){
 		WriteBytes((void*)(gd::base + 0x179B8E), {0x90, 0x90});
 		WriteBytes((void*)(gd::base + 0x176F5C), {0x8B, 0xCA, 0x90});
 		WriteBytes((void*)(gd::base + 0x176FE5), {0xB0, 0x01, 0x90});
@@ -798,14 +639,14 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x176F5C), {0x0F, 0x44, 0xCA});
 		WriteBytes((void*)(gd::base + 0x176FE5), {0x0F, 0x95, 0xC0});
 	}
-	if (NoCMarkEnabled){
+	if (setting.NoCMarkEnabled){
 		WriteBytes((void*)(gd::base + 0xA6B8B), {0x2B, 0x87, 0xCC, 0x02, 0x00, 0x00, });
 		WriteBytes((void*)(gd::base + 0x70E87), {0xEB, 0x26});
 	} else {
 		WriteBytes((void*)(gd::base + 0xA6B8B), {0x2B, 0x87, 0xD0, 0x02, 0x00, 0x00});
 		WriteBytes((void*)(gd::base + 0x70E87), {0x74, 0x26});
 	}
-	if (ObjectBypassEnabled){
+	if (setting.ObjectBypassEnabled){
 		WriteBytes((void*)(gd::base + 0x73169), {0xFF, 0xFF, 0xFF, 0x7F, });
 		WriteBytes((void*)(gd::base + 0x856A4), {0xFF, 0xFF, 0xFF, 0x7F, });
 		WriteBytes((void*)(gd::base + 0x87B17), {0xFF, 0xFF, 0xFF, 0x7F, });
@@ -822,7 +663,7 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x880F4), {0x80, 0x38, 0x01, 0x00, });
 		WriteBytes((void*)(gd::base + 0x160B06), {0x80, 0x38, 0x01, 0x00, });
 	}
-	if (CustomObjectBypassEnabled){
+	if (setting.CustomObjectBypassEnabled){
 		WriteBytes((void*)(gd::base + 0x7A100), {0xEB, });
 		WriteBytes((void*)(gd::base + 0x7A022), {0xEB, });
 		WriteBytes((void*)(gd::base + 0x7A203), {0x90, 0x90, });
@@ -831,7 +672,7 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x7A022), {0x76, });
 		WriteBytes((void*)(gd::base + 0x7A203), {0x77, 0x3A, });
 	}
-	if (ZoomBypassEnabled){
+	if (setting.ZoomBypassEnabled){
 		WriteBytes((void*)(gd::base + 0x87801), {0x90, 0x90, 0x90, });
 		WriteBytes((void*)(gd::base + 0x87806), {0x90, 0x90, 0x90, });
 		WriteBytes((void*)(gd::base + 0x87871), {0x90, 0x90, 0x90, });
@@ -842,7 +683,7 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x87871), {0x0F, 0x2F, 0xC8, });
 		WriteBytes((void*)(gd::base + 0x87876), {0x0F, 0x28, 0xC8, });
 	}
-	if (ToolboxButtonBypassEnabled){
+	if (setting.ToolboxButtonBypassEnabled){
 		WriteBytes((void*)(gd::base + 0x13A548), {0x83, 0xF9, 0x01, });
 		WriteBytes((void*)(gd::base + 0x13A559), {0xB8, 0x01, 0x00, 0x00, 0x00, });
 		WriteBytes((void*)(gd::base + 0x13A54D), {0x83, 0xF9, 0x7F, });
@@ -861,12 +702,12 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x13A5dd), {0x83, 0xF9, 0x03, });
 		WriteBytes((void*)(gd::base + 0x13A5E2), {0xB9, 0x03, 0x00, 0x00, 0x00, });
 	}
-	if (VerifyHackEnabled){
+	if (setting.VerifyHackEnabled){
 		WriteBytes((void*)(gd::base + 0x71D48), {0xEB, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x71D48), {0x74, });
 	}
-	if (DefaultSongBypassEnabled){
+	if (setting.DefaultSongBypassEnabled){
 		WriteBytes((void*)(gd::base + 0x174407), {0x90, 0x90, });
 		WriteBytes((void*)(gd::base + 0x174411), {0x90, 0x90, 0x90, });
 		WriteBytes((void*)(gd::base + 0x174456), {0x90, 0x90, });
@@ -877,31 +718,31 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x174456), {0x90, 0x90, });
 		WriteBytes((void*)(gd::base + 0x174460), {0x90, 0x90, 0x90, });
 	}
-	if (LevelEditEnabled){
+	if (setting.LevelEditEnabled){
 		WriteBytes((void*)(gd::base + 0x1E4A32), {0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x1E4A32), {0x75, 0x6C, });
 	}
-	if (EditorExtensionEnabled){
+	if (setting.EditorExtensionEnabled){
 		WriteBytes((void*)(gd::base + 0x2E67A4), {0x00, 0x60, 0xEA, 0x4B, });
 		WriteBytes((void*)(gd::base + 0x8FA4D), {0x0F, 0x60, 0xEA, 0x4B, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x2E67A4), {0x00, 0x60, 0x6A, 0x48, });
 		WriteBytes((void*)(gd::base + 0x8FA4D), {0x80, 0x67, 0x6A, 0x48, });
 	}
-	if (PlaceOverEnabled){
+	if (setting.PlaceOverEnabled){
 		WriteBytes((void*)(gd::base + 0x160EE1), {0x8B, 0xC1, 0x90, });
 		WriteBytes((void*)(gd::base + 0x160EF2), {0xE9, 0x23, 0x02, 0x00, 0x00, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x160EE1), {0x0F, 0x48, 0xC1, });
 		WriteBytes((void*)(gd::base + 0x160EF2), {0x0F, 0x8F, 0x22, 0x02, 0x00, 0x00, });
 	}
-	if (TestmodeBypassEnabled){
+	if (setting.TestmodeBypassEnabled){
 		WriteBytes((void*)(gd::base + 0x1FD270), {0xE9, 0xB7, 0x00, 0x00, 0x00, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x1FD270), {0x0F, 0x84, 0xB6, 0x00, 0x00, 0x00, });
 	}
-	if (RotationHackEnabled){
+	if (setting.RotationHackEnabled){
 		WriteBytes((void*)(gd::base + 0x85CBC), {0xB8, 0x01, 0x00, 0x00, 0x00, 0x90, });
 		WriteBytes((void*)(gd::base + 0x8BDDD), {0xB8, 0x01, 0x00, 0x00, 0x00, 0x90, });
 		WriteBytes((void*)(gd::base + 0x8BE16), {0xB8, 0x01, 0x00, 0x00, 0x00, 0x90, });
@@ -916,7 +757,7 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0xEE5A9), {0x8B, 0x86, 0x00, 0x03, 0x00, 0x00, });
 		WriteBytes((void*)(gd::base + 0x20181E), {0x8B, 0x83, 0x00, 0x03, 0x00, 0x00, });
 	}
-	if (FreeScrollEnabled){
+	if (setting.FreeScrollEnabled){
 		WriteBytes((void*)(gd::base + 0x8FAAC), {0xEB, });
 		WriteBytes((void*)(gd::base + 0x8FA95), {0xEB, });
 		WriteBytes((void*)(gd::base + 0x8FAC5), {0xEB, });
@@ -927,12 +768,12 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x8FAC5), {0x77, });
 		WriteBytes((void*)(gd::base + 0x8FADC), {0x77, });
 	}
-	if (HideUIEnabled){
+	if (setting.HideUIEnabled){
 		WriteBytes((void*)(gd::base + 0x8720A), {0xB3, 0x00, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x8720A), {0x0F, 0x44, 0xD9, });
 	}
-	if (ZOrderBypassEnabled){
+	if (setting.ZOrderBypassEnabled){
 		WriteBytes((void*)(gd::base + 0x22DEDE), {0x90, 0x90, 0x90, });
 		WriteBytes((void*)(gd::base + 0x22DEE8), {0x90, 0x90, 0x90, });
 	} else {
@@ -940,59 +781,59 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x22DEE8), {0x0F, 0x4F, 0xC1, });
 	}
 	
-	if (speedhackEnabled)
+	if (setting.speedhackEnabled)
 	{
-		if (speedhackAudioEnabled){
-			SpeedhackAudio::set(speed);
-			cocos2d::CCDirector::sharedDirector()->getScheduler()->setTimeScale(speed);
+		if (setting.speedhackAudioEnabled){
+			SpeedhackAudio::set(setting.speed);
+			cocos2d::CCDirector::sharedDirector()->getScheduler()->setTimeScale(setting.speed);
 		} else {
 			SpeedhackAudio::set(1);
-			cocos2d::CCDirector::sharedDirector()->getScheduler()->setTimeScale(speed);
+			cocos2d::CCDirector::sharedDirector()->getScheduler()->setTimeScale(setting.speed);
 		}
 	} else {
 		SpeedhackAudio::set(1);
 		cocos2d::CCDirector::sharedDirector()->getScheduler()->setTimeScale(1);
 	}
-	if (IconsEnabled){
+	if (setting.IconsEnabled){
 		WriteBytes((void*)(gd::base + 0xC50A8), {0xB0, 0x01, 0x90, 0x90, 0x90, });
 		WriteBytes((void*)(gd::base + 0xC54BA), {0xB0, 0x01, 0x90, 0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0xC50A8), {0xE8, 0x7A, 0xCD, 0x19, 0x00, });
 		WriteBytes((void*)(gd::base + 0xC54BA), {0xE8, 0x68, 0xC9, 0x19, 0x00, });
 	}
-	if (TextLengthEnabled){
+	if (setting.TextLengthEnabled){
 		WriteBytes((void*)(gd::base + 0x21ACB), {0xEB, 0x04, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x21ACB), {0x7C, 0x04, });
 	}
-	if (CharacterFilterEnabled){
+	if (setting.CharacterFilterEnabled){
 		WriteBytes((void*)(gd::base + 0x21A99), {0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x21A99), {0x75, 0x04, });
 	}
-	if (SliderLimitEnabled){
+	if (setting.SliderLimitEnabled){
 		WriteBytes((void*)(gd::base + 0x2E5CA), {0xEB, });
 		WriteBytes((void*)(gd::base + 0x2E5F8), {0xEB, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x2E5CA), {0x76, });
 		WriteBytes((void*)(gd::base + 0x2E5F8), {0x76, });
 	}
-	if (MainLevelsEnabled){
+	if (setting.MainLevelsEnabled){
 		WriteBytes((void*)(gd::base + 0x188CE1), {0xE9, 0x8A, 0x00, 0x00, 0x00, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x188CE1), {0x0F, 0x8E, 0x89, 0x00, 0x00, 0x00, });
 	}
-	if (GuardVaultEnabled){
+	if (setting.GuardVaultEnabled){
 		WriteBytes((void*)(gd::base + 0x1DE1DA), {0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x1DE1DA), {0x7C, 0x4A, });
 	}
-	if (KeymasterVaultEnabled){
+	if (setting.KeymasterVaultEnabled){
 		WriteBytes((void*)(gd::base + 0x4F268), {0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x4F268), {0x74, 0x4A, });
 	}
-	if (BasementKeyBypassEnabled){
+	if (setting.BasementKeyBypassEnabled){
 		WriteBytes((void*)(gd::base + 0x226E19), {0xE9, 0x59, 0x01, 0x00, 0x00, 0x90, });
 		WriteBytes((void*)(gd::base + 0x226FB8), {0xE9, 0x59, 0x01, 0x00, 0x00, 0x90, });
 		WriteBytes((void*)(gd::base + 0x227157), {0xE9, 0x30, 0x02, 0x00, 0x00, 0x90, });
@@ -1001,49 +842,49 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x226FB8), {0x0F, 0x85, 0x58, 0x01, 0x00, 0x00, });
 		WriteBytes((void*)(gd::base + 0x227157), {0x0F, 0x85, 0x2F, 0x02, 0x00, 0x00, });
 	}
-	if (ChallengeBypassEnabled){
+	if (setting.ChallengeBypassEnabled){
 		WriteBytes((void*)(gd::base + 0x2214E0), {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x2214E0), {0x0F, 0x84, 0x87, 0x00, 0x00, 0x00, });
 	}
-	if (TreasureRoomEnabled){
+	if (setting.TreasureRoomEnabled){
 		WriteBytes((void*)(gd::base + 0x4F631), {0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x4F631), {0x74, 0x4A, });
 	}
-	if (PotborShopEnabled){
+	if (setting.PotborShopEnabled){
 		WriteBytes((void*)(gd::base + 0x15706B), {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x15706B), {0x0F, 0x8C, 0xB4, 0x01, 0x00, 0x00, 0x00, });
 	}
-	if (ScratchShopEnabled){
+	if (setting.ScratchShopEnabled){
 		WriteBytes((void*)(gd::base + 0x1562D3), {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x1562D3), {0x0F, 0x8C, 0xAF, 0x01, 0x00, 0x00, 0x00, });
 	}
-	if (FreeShopItemsEnabled){
+	if (setting.FreeShopItemsEnabled){
 		WriteBytes((void*)(gd::base + 0xF33BB), {0x8B, 0x93, 0x10, 0x01, 0x00, 0x00, });
 		WriteBytes((void*)(gd::base + 0x14B339), {0x2B, 0xB3, 0x10, 0x01, 0x00, 0x00, });
 	} else {
 		WriteBytes((void*)(gd::base + 0xF33BB), {0x8B, 0x93, 0x14, 0x01, 0x00, 0x00, });
 		WriteBytes((void*)(gd::base + 0x14B339), {0x2B, 0xB3, 0x14, 0x01, 0x00, 0x00, });
 	}
-	if (GatekeeperVaultEnabled){
+	if (setting.GatekeeperVaultEnabled){
 		WriteBytes((void*)(gd::base + 0x188836), {0x90, 0x90, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x188836), {0x74, 0x61, });
 	}
-	if (BackupStarsLimitEnabled){
+	if (setting.BackupStarsLimitEnabled){
 		WriteBytes((void*)(gd::base + 0x3928E), {0xEB, 0x3E, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x3928E), {0x7D, 0x3E, });
 	}
-	if (UnblockHackEnabled){
+	if (setting.UnblockHackEnabled){
 		WriteBytes((void*)(gd::base + 0x29C0E8), {0x61, 0x48, 0x52, 0x30, 0x63, 0x48, 0x4D, 0x36, 0x4C, 0x79, 0x39, 0x68, 0x59, 0x6E, 0x4E, 0x76, 0x62, 0x47, 0x78, 0x73, 0x64, 0x58, 0x52, 0x6C, 0x4C, 0x6D, 0x4E, 0x76, 0x62, 0x53, 0x39, 0x68, 0x63, 0x47, 0x6B, 0x76, 0x5A, 0x32, 0x52, 0x66, 0x64, 0x58, 0x4E, 0x6C, 0x63, 0x6D, 0x6C, 0x75, 0x5A, 0x6D, 0x39, 0x66, 0x63, 0x33, 0x42, 0x76, 0x62, 0x32, 0x59, 0x3D, 0x00, });
 	} else {
 		WriteBytes((void*)(gd::base + 0x29C0E8), {0x61, 0x48, 0x52, 0x30, 0x63, 0x44, 0x6F, 0x76, 0x4C, 0x33, 0x64, 0x33, 0x64, 0x79, 0x35, 0x69, 0x62, 0x32, 0x39, 0x74, 0x62, 0x47, 0x6C, 0x75, 0x5A, 0x33, 0x4D, 0x75, 0x59, 0x32, 0x39, 0x74, 0x4C, 0x32, 0x52, 0x68, 0x64, 0x47, 0x46, 0x69, 0x59, 0x58, 0x4E, 0x6C, 0x4C, 0x32, 0x64, 0x6C, 0x64, 0x45, 0x64, 0x4B, 0x56, 0x58, 0x4E, 0x6C, 0x63, 0x6B, 0x6C, 0x75, 0x5A, 0x6D, 0x38, 0x79, 0x4D, 0x43, 0x35, 0x77, 0x61, 0x48, 0x41, 0x3D, 0x00, });
 	}
-	if (AccuratePercentageEnabled)
+	if (setting.AccuratePercentageEnabled)
 	{
 		WriteBytes((void*)(gd::base + 0x2080FB), {0xFF, 0x50, 0x64, 0xF3, 0x0F, 0x10, 0x00, 0x8B, 0x87, 0xC0, 0x03, 0x00, 0x00, 0x83, 0xEC, 0x08, 0x42});
 		WriteBytes((void*)(gd::base + 0x208114), { 0xF3, 0x0F, 0x5E, 0x87, 0xB4, 0x03, 0x00, 0x00, 0xC7, 0x02, 0x25, 0x2E, 0x32, 0x66, 0xC7, 0x42, 0x04, 0x25, 0x25, 0x00, 0x00, 0x8B, 0xB0, 0x04, 0x01, 0x00, 0x00, 0xF3, 0x0F, 0x5A, 0xC0, 0xF2, 0x0F, 0x11, 0x04, 0x24, 0x52});
@@ -1053,7 +894,7 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x208114), {0xF3, 0x0F, 0x5E, 0x87, 0xB4, 0x03, 0x00, 0x00, 0xC7, 0x02, 0x25, 0x2E, 0x30, 0x66, 0xC7, 0x42, 0x04, 0x25, 0x25, 0x00, 0x00, 0x8B, 0xB0, 0x04, 0x01, 0x00, 0x00, 0xF3, 0x0F, 0x5A, 0xC0, 0xF2, 0x0F, 0x11, 0x04, 0x24, 0x52});
 		WriteBytes((void*)(gd::base + 0x20813F), {0x83, 0xC4, 0x0C});
 	}
-	if (OnlyPercentageEnabled)
+	if (setting.OnlyPercentageEnabled)
 	{
 		WriteBytes((void*)(gd::base + 0x1FCE89), { 0x0F, 0x57, 0xC0, 0x90, 0x90, 0x90 });
 		WriteBytes((void*)(gd::base + 0x1FCF38), { 0x0D });
@@ -1076,61 +917,61 @@ static void ShowPlayerHacks(){
 	ImGui::SetWindowPos(ImVec2(10, 10));
 
 
-	ImGui::Checkbox("NoClip", &NoClipEnabled);
+	ImGui::Checkbox("NoClip", &setting.NoClipEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Makes the player invincible. (Safe patch.)");
 	
-	ImGui::Checkbox("NoSpikes", &NoSpikesEnabled);
+	ImGui::Checkbox("NoSpikes", &setting.NoSpikesEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Ignores spike objects.");
 
-	ImGui::Checkbox("Force Block Type", &ForceBlockTypeEnabled);
+	ImGui::Checkbox("Force Block Type", &setting.ForceBlockTypeEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Treats all objects as if they were blocks.");
 
-	ImGui::Checkbox("Everything Hurts", &EverythingHurtsEnabled);
+	ImGui::Checkbox("Everything Hurts", &setting.EverythingHurtsEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Ouch.");
 
-	ImGui::Checkbox("Freeze Player", &FreezePlayerEnabled);
+	ImGui::Checkbox("Freeze Player", &setting.FreezePlayerEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Freezes player movement.");
 
-	ImGui::Checkbox("Jump Hack", &JumpHackEnabled);
+	ImGui::Checkbox("Jump Hack", &setting.JumpHackEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Allows for jumping in mid-air.");
 
-	ImGui::Checkbox("Force Trail State", &ForceTrailStateEnabled);
+	ImGui::Checkbox("Force Trail State", &setting.ForceTrailStateEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Sets the trail to always on.");
 
-	ImGui::Checkbox("Hide Attempts", &HideAttemptsEnabled);
+	ImGui::Checkbox("Hide Attempts", &setting.HideAttemptsEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Hides the attempt count in-game.");
 
-	ImGui::Checkbox("Practice Music Hack", &PracticeMusicHackEnabled);
+	ImGui::Checkbox("Practice Music Hack", &setting.PracticeMusicHackEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Plays the level's song in-sync with your position, instead of the standard practice song.");
 
-	ImGui::Checkbox("No Pulse", &NoPulseEnabled);
+	ImGui::Checkbox("No Pulse", &setting.NoPulseEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Disables pulsing on objects.");
 
-	ImGui::Checkbox("Ignore ESC", &IgnoreESCEnabled);
+	ImGui::Checkbox("Ignore ESC", &setting.IgnoreESCEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Stops the ESC key from exiting a level.");
 
 	
-	ImGui::Checkbox("Suicide", &SuicideEnabled);
+	ImGui::Checkbox("Suicide", &setting.SuicideEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Kills the player.");
 
 
-	ImGui::Checkbox("Accurate Percentage", &AccuratePercentageEnabled);
+	ImGui::Checkbox("Accurate Percentage", &setting.AccuratePercentageEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Allows for decimals in the level percentage.");
 
-	ImGui::Checkbox("Only percentage", &OnlyPercentageEnabled);
+	ImGui::Checkbox("Only percentage", &setting.OnlyPercentageEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Disables progress bar");
 
@@ -1147,7 +988,7 @@ static void ShowPlayerHacks(){
 	} else {
 		WriteBytes((void*)(gd::base + 0x20350D), {0x8C, 0x03, 0x00, 0x00, 0x8B, 0x8E, 0x1C, 0x01, 0x00, 0x00, 0x8B, 0x01, 0xFF, 0x50, 0x64});
 	} */
-	ImGui::Checkbox("No Particles", &NoParticlesEnabled);
+	ImGui::Checkbox("No Particles", &setting.NoParticlesEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Disables resuming the particle system.");
 
@@ -1160,67 +1001,67 @@ static void ShowCreatorHacks(){
 	ImGui::SetWindowSize(ImVec2(210, 400));
 	ImGui::SetWindowPos(ImVec2(230, 10));
 
-	ImGui::Checkbox("Copy Hack", &CopyHackEnabled);
+	ImGui::Checkbox("Copy Hack", &setting.CopyHackEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you copy any level, without a password.");
 
-	ImGui::Checkbox("No (C) Mark", &NoCMarkEnabled);
+	ImGui::Checkbox("No (C) Mark", &setting.NoCMarkEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Removes the (C) mark when uploading copied levels.");
 
-	ImGui::Checkbox("Level Edit", &LevelEditEnabled);
+	ImGui::Checkbox("Level Edit", &setting.LevelEditEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you edit any level, access the editor through the pause menu.");
 
-	ImGui::Checkbox("Object Bypass", &ObjectBypassEnabled);
+	ImGui::Checkbox("Object Bypass", &setting.ObjectBypassEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Sets the object limit to around 2 billion.");
 
-	ImGui::Checkbox("Custom Object Bypass", &CustomObjectBypassEnabled);
+	ImGui::Checkbox("Custom Object Bypass", &setting.CustomObjectBypassEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Removes the object limit for custom objects & lets you save over 50.");
 
-	ImGui::Checkbox("Zoom Bypass", &ZoomBypassEnabled);
+	ImGui::Checkbox("Zoom Bypass", &setting.ZoomBypassEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you zoom an infinite amount in the editor. (NOTE: Can crash with an edited grid size.)");
 
-	ImGui::Checkbox("Toolbox Button Bypass", &ToolboxButtonBypassEnabled);
+	ImGui::Checkbox("Toolbox Button Bypass", &setting.ToolboxButtonBypassEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Allows for more objects in the editor toolbox.");
 
-	ImGui::Checkbox("Verify Hack", &VerifyHackEnabled);
+	ImGui::Checkbox("Verify Hack", &setting.VerifyHackEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you upload unverified levels.");
 
-	ImGui::Checkbox("Default Song Bypass", &DefaultSongBypassEnabled);
+	ImGui::Checkbox("Default Song Bypass", &setting.DefaultSongBypassEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you use hidden default songs in the editor.");
 
-	ImGui::Checkbox("Editor Extension", &EditorExtensionEnabled);
+	ImGui::Checkbox("Editor Extension", &setting.EditorExtensionEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Increases the editor length by a factor of 128.");
 
-	ImGui::Checkbox("Place Over", &PlaceOverEnabled);
+	ImGui::Checkbox("Place Over", &setting.PlaceOverEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you place the same object over itself in the editor.");
 
-	ImGui::Checkbox("Testmode Bypass", &TestmodeBypassEnabled);
+	ImGui::Checkbox("Testmode Bypass", &setting.TestmodeBypassEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Hides the 'Testmode' text when playing with a startpos.");
 
-	ImGui::Checkbox("Rotation Hack", &RotationHackEnabled);
+	ImGui::Checkbox("Rotation Hack", &setting.RotationHackEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Allows you to rotate any object. Only works locally.");
 
-	ImGui::Checkbox("Free Scroll", &FreeScrollEnabled);
+	ImGui::Checkbox("Free Scroll", &setting.FreeScrollEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Allows you to scroll out the editor.");
 
-	ImGui::Checkbox("Hide UI", &HideUIEnabled);
+	ImGui::Checkbox("Hide UI", &setting.HideUIEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Hides the Editor UI while building.");
 
-	ImGui::Checkbox("Z Order Bypass", &ZOrderBypassEnabled);
+	ImGui::Checkbox("Z Order Bypass", &setting.ZOrderBypassEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Removed the -100 to 100 Z order range limit.");
 	ImGui::End();
@@ -1234,55 +1075,55 @@ static void ShowBypassHacks(){
 	ImGui::Begin("Bypass", NULL, ImGuiWindowFlags_NoMove);
 	ImGui::SetWindowSize(ImVec2(210, 430));
 	ImGui::SetWindowPos(ImVec2(450, 10));
-	ImGui::Checkbox("Icons", &IconsEnabled);
+	ImGui::Checkbox("Icons", &setting.IconsEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks all icons.");
-	ImGui::Checkbox("Text Length", &TextLengthEnabled);
+	ImGui::Checkbox("Text Length", &setting.TextLengthEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Allows for unlimited text length in text inputs.");
-	ImGui::Checkbox("Character Filter", &CharacterFilterEnabled);
+	ImGui::Checkbox("Character Filter", &setting.CharacterFilterEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you input any character in all text inputs.");
-	ImGui::Checkbox("Slider Limit", &SliderLimitEnabled);
+	ImGui::Checkbox("Slider Limit", &setting.SliderLimitEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets sliders be dragged beyond the visible limit.");
-	ImGui::Checkbox("Main Levels", &MainLevelsEnabled);
+	ImGui::Checkbox("Main Levels", &setting.MainLevelsEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks locked demon levels.");
-	ImGui::Checkbox("Guard Vault", &GuardVaultEnabled);
+	ImGui::Checkbox("Guard Vault", &setting.GuardVaultEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks the guard's vault.");
-	ImGui::Checkbox("Keymaster Vault", &KeymasterVaultEnabled);
+	ImGui::Checkbox("Keymaster Vault", &setting.KeymasterVaultEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks the keymaster's vault.");
-	ImGui::Checkbox("Keymaster Basement", &KeymasterBasementEnabled);
+	ImGui::Checkbox("Keymaster Basement", &setting.KeymasterBasementEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks the keymaster's basement.");
-	ImGui::Checkbox("Basement Key Bypass", &BasementKeyBypassEnabled);
+	ImGui::Checkbox("Basement Key Bypass", &setting.BasementKeyBypassEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you unlock the locks in the basement.");
-	ImGui::Checkbox("Challenge Bypass", &ChallengeBypassEnabled);
+	ImGui::Checkbox("Challenge Bypass", &setting.ChallengeBypassEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks 'The Challenge' level.");
-	ImGui::Checkbox("Treasure Room", &TreasureRoomEnabled);
+	ImGui::Checkbox("Treasure Room", &setting.TreasureRoomEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks the treasure room.");
-	ImGui::Checkbox("Potbor Shop", &PotborShopEnabled);
+	ImGui::Checkbox("Potbor Shop", &setting.PotborShopEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks Potbor's shop in the treasure room.");
-	ImGui::Checkbox("Scratch Shop", &ScratchShopEnabled);
+	ImGui::Checkbox("Scratch Shop", &setting.ScratchShopEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks Scratch's shop in the treasure room.");
-	ImGui::Checkbox("Free Shop Items", &FreeShopItemsEnabled);
+	ImGui::Checkbox("Free Shop Items", &setting.FreeShopItemsEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Allows all shop items to be bought for 0 mana orbs.");
-	ImGui::Checkbox("Gatekeeper Vault", &GatekeeperVaultEnabled);
+	ImGui::Checkbox("Gatekeeper Vault", &setting.GatekeeperVaultEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks the Gatekeeper's vault.");
-	ImGui::Checkbox("Backup Stars Limit", &BackupStarsLimitEnabled);
+	ImGui::Checkbox("Backup Stars Limit", &setting.BackupStarsLimitEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you backup data, even with less than 10 stars.");
-	ImGui::Checkbox("Unblock Hack", &UnblockHackEnabled);
+	ImGui::Checkbox("Unblock Hack", &setting.UnblockHackEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Lets you view profiles of users who have blocked you.");
 	ImGui::End();
@@ -1294,15 +1135,15 @@ static void ShowSpeedhack(){
 	
 	if (GetAsyncKeyState(VK_F2) & 5)
 	{
-		speed += f2_offset;
+		setting.speed += setting.f2_offset;
 	}
 	if (GetAsyncKeyState(VK_F1) & 5)
 	{
-		speed -= f1_offset;
+		setting.speed -= setting.f1_offset;
 	}
-	ImGui::SliderFloat("x", &speed, 0.0f, 20.0f, "%.1f");
-	ImGui::Checkbox("Enabled", &speedhackEnabled);
-	ImGui::Checkbox("Speedhack audio", &speedhackAudioEnabled);
+	ImGui::SliderFloat("x", &setting.speed, 0.0f, 20.0f, "%.1f");
+	ImGui::Checkbox("Enabled", &setting.speedhackEnabled);
+	ImGui::Checkbox("Speedhack audio", &setting.speedhackAudioEnabled);
 	
 	// ImGui::InputFloat2("F1 and F2 offsets", offsets, "%.1f");
 	/*ImGui::InputFloat("F1 Offset", &f1_offset, 0.5, 1, "%.1f");
@@ -1320,8 +1161,8 @@ static void ShowFPSBypass(){
 	ImGui::SetWindowSize(ImVec2(210, 80));
 	ImGui::SetWindowPos(ImVec2(230, 420));
 
-	ImGui::InputFloat("FPS", &interval, 10.f, 20.f, "%.1f");
-	ImGui::Checkbox("Enabled", &FPSBypassEnabled);
+	ImGui::InputFloat("FPS", &setting.interval, 10.f, 20.f, "%.1f");
+	ImGui::Checkbox("Enabled", &setting.FPSBypassEnabled);
 
 	ImGui::End();
 }
@@ -1330,8 +1171,8 @@ static void ShowStatus(){
 	ImGui::Begin("Status", NULL, ImGuiWindowFlags_NoMove);
 	ImGui::SetWindowSize(ImVec2(210, 84));
 	ImGui::SetWindowPos(ImVec2(670, 10));
-	ImGui::Checkbox("Enable NoClip Accuracy", &NoClipAccEnabled);
-	ImGui::Checkbox("Enable FPS Counter", &FPSCounterEnabled);
+	ImGui::Checkbox("Enable NoClip Accuracy", &setting.NoClipAccEnabled);
+	ImGui::Checkbox("Enable FPS Counter", &setting.FPSCounterEnabled);
 	/* if (ImGui::Button("Inject Dll")) {
     std::string stringpath = chooseDLL();
     const char* DllPath = stringpath.c_str();
@@ -1368,7 +1209,7 @@ static void ShowDeveloper(){
 	
 
 	ImGui::Separator();
-	ImGui::Checkbox("Enable FPS Counter", &FPSCounterEnabled);
+	ImGui::Checkbox("Enable FPS Counter", &setting.FPSCounterEnabled);
 	
 }
 static void ShowAboutWindow(){
@@ -1434,9 +1275,9 @@ void MainThread()
 	disableAnticheat();
 	DEVMODE dm;
 	EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm);
-	if (FPSBypassEnabled)
+	if (setting.FPSBypassEnabled)
 	{
-		SetTargetFPS(interval);
+		SetTargetFPS(setting.interval);
 	} else {
 		SetTargetFPS(dm.dmDisplayFrequency);
 	}
