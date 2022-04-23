@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(ModMenu)
@@ -22,6 +22,7 @@ target_include_directories(ModMenu PRIVATE
   libraries/imgui/kiero/minhook/include
   libraries/gd.h
   libraries/gd.h/include
+  src/
 )
 
 add_subdirectory(libraries/minhook)
@@ -29,6 +30,7 @@ add_subdirectory(libraries/imgui)
 add_subdirectory(libraries/cocos-headers)
 target_link_libraries(ModMenu
   ${CMAKE_SOURCE_DIR}/libraries/cocos-headers/cocos2dx/libcocos2d.lib
+  ${CMAKE_SOURCE_DIR}/libraries/glew32.lib
   imgui_hook
   minhook
   opengl32

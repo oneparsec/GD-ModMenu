@@ -11,10 +11,22 @@ fig
 
 #define DEVELOPER_MODE TRUE
 #define VERSION "DEV_RELEASE"
+#define _CRT_SECURE_NO_WARNINGS
+
+#ifndef UNICODE
+    #define LOADER_STR string
+#else
+    #define LOADER_STR wstring
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(disable: 4251) // disable warning 4251
+#pragma warning(disable: 4244) // possible loss of data warning
 #endif
+
+#pragma comment(lib,"opengl32.lib")
+
+
 
 #include <Windows.h>
 #include <imgui_hook.h>
@@ -24,7 +36,6 @@ fig
 #include <iostream>
 #include <Psapi.h>
 #include <fstream>
-#include "SimpleIni.h"
 #include <cocos2d.h>
 #include "utils.hpp"
 #include <iostream>
@@ -34,7 +45,6 @@ fig
 #include <ctime>
 #include <thread>
 #include <commdlg.h>
-
 
 static bool show = false;
 static bool showDemoWindow = false;
@@ -105,12 +115,20 @@ static struct
 	bool GatekeeperVaultEnabled;
 	bool BackupStarsLimitEnabled;
 	bool UnblockHackEnabled;
-	// utilities
+	// status
 	bool NoClipAccEnabled;
 	bool FPSCounterEnabled;
+	// other
+	int currentTransition;
+	bool MSAAEnabled;
+	// developer
+	bool transitionTest;
 } setting;
 
+std::string nofilename = "false";
 
+const char * transitions[]{"Fade", "CrossFade", "FadeBL", "FadeDown", "FadeTR", "FadeUp", "FlipAngular", "FlipX", "FlipY", "JumpZoom", "MoveInB", "MoveInL", "MoveInR", "MoveInT", "RotoZoom", "ShrinkGrow", "SlideInB", "SlideInL", "SlideInR", "SlideInT", "SplitCols", "SplitRows", "TurnOffTiles", "ZoomFlipAngular", "ZoomFlipX", "ZoomFlipY", "PageTurn", "ProgressHorizontal", "ProgressInOut", "ProgressOutIn", "ProgressRadialCCW", "ProgressRadialCW", "ProgressVertical"};
+const std::vector<uint32_t> transitionaddr = { 0xA53D0, 0xA5320, 0xA54F0, 0xA55C0, 0xA5690, 0xA5760, 0xA5830, 0xA5950, 0xA5A70, 0xA5B90, 0xA5C40, 0xA5D10, 0xA5DE0, 0xA5EB0, 0xA5F80, 0xA6170, 0xA6240, 0xA6310, 0xA63E0, 0xA64B0, 0xA6580, 0xA6650, 0xA6720, 0xA67F0, 0xA6910, 0xA6A30, 0xA8D50, 0xA91D0, 0xA92A0, 0xA9370, 0xA9440, 0xA9510, 0xA95E0 };
 
 
 static char license[1067]= "MIT License\nCopyright (c) 2022 Alexandr Simonov\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the ""Software""), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.";
@@ -118,6 +136,17 @@ static char license[1067]= "MIT License\nCopyright (c) 2022 Alexandr Simonov\nPe
 int totalClicks = 0;
 int midClickCount = 0, actualClickCount = 0;
 int lastAsyncKeyStateValue = 1337;
+
+bool sortPlayer = true;
+bool sortBypass = true;
+bool sortSpeedhack = true;
+bool sortFPSBypass = true;
+bool sortCreator = true;
+bool sortStatus = true;
+bool sortOther = true;
+bool sortAbout = true;
+
+
 
 static struct {
 	bool wouldDie = false;
@@ -140,6 +169,8 @@ static struct {
 	int smoothOut;
 } startposFix;
 
+using namespace cocos2d;
+using namespace std;
 
 
 
@@ -148,18 +179,129 @@ typedef void    (__thiscall *fSetAnimationInterval)(void *instance, double delay
 fSharedApplication sharedApplication;
 fSetAnimationInterval setAnimInterval;
 
-using namespace cocos2d;
-using namespace std;
 
+HMODULE ccdll;
+
+GLFWwindow* (__cdecl *host_glfwCreateWindow)(int width, int height, const char* title, GLFWmonitor* monitor, GLFWwindow* share) = nullptr;
+
+GLFWwindow* __cdecl hook_glfwCreateWindow(int width, int height, const char* title, GLFWmonitor* monitor, GLFWwindow* share) {
+    // Set GLFW_SAMPLES Window Hint to 4 to enable MSAAx4
+    *as<int*>((unsigned int)ccdll + 0x1a14e8) = 4;
+
+    return host_glfwCreateWindow(width, height, title, monitor, share);
+}
+
+void (_fastcall *host_CCDirector_drawScene)(CCDirector* _this) = nullptr;
+
+void _fastcall hook_CCDirector_drawScene(CCDirector* _this) {
+    // Enable multisampling
+    glEnable(GL_MULTISAMPLE);
+
+    host_CCDirector_drawScene(_this);
+}
+
+bool loadMSAA() {
+    ccdll = GetModuleHandleA("libcocos2d.dll");
+
+    // Get the address for CCDirector::drawScene
+    auto drawSceneAddr = GetProcAddress(ccdll, "?drawScene@CCDirector@cocos2d@@QAEXXZ");
+
+    MH_CreateHook(
+        drawSceneAddr,
+        as<LPVOID>(hook_CCDirector_drawScene),
+        as<LPVOID*>(&host_CCDirector_drawScene)
+    );
+    // Address to glfwCreateWindow in the cocos2d dll
+    auto cwinaddr = as<LPVOID>((unsigned int)ccdll + 0x110f50);
+
+    MH_CreateHook(
+		cwinaddr,
+        as<LPVOID>(hook_glfwCreateWindow),
+        as<LPVOID*>(&host_glfwCreateWindow)
+    );
+    MH_EnableHook(MH_ALL_HOOKS);
+    return true;
+}
+
+HWND hWnd;
+DWORD procId;
+HANDLE hProcess;
+uint32_t base, alloc_base, alloc_offset;
+size_t alloc_size;
+std::map<std::string /*key*/, std::pair<uint32_t /*offset*/, size_t /*size*/>> alloc_map;
 chrono::system_clock::time_point start = chrono::system_clock::now(), now;
 
 chrono::duration<double> cycleTime;
 
 
+uint32_t GetModuleBase(const char *module)
+{
+    static const int size = 0x1000;
+    DWORD out;
+    HMODULE hmods[size];
+    if (EnumProcessModulesEx(GetCurrentProcess(), hmods, 0x1000, &out, LIST_MODULES_ALL))
+    {
+        for (uint32_t i = 0; i < out / 4; ++i)
+        {
+            char path[MAX_PATH];
+            if (GetModuleBaseNameA(GetCurrentProcess(), hmods[i], path, MAX_PATH))
+            {
+                if (!strcmp(path, module))
+                    return reinterpret_cast<uint32_t>(hmods[i]);
+            }
+        }
+    }
+    return 0;
+}
 
-char * filter = "Dynamic link library (*.dll)\0*.dll";
+uint32_t cocosBase = GetModuleBase("libcocos2d.dll");
 
-CSimpleIniA ini;
+bool Free(uint32_t vaddress, size_t size)
+{
+    return VirtualFreeEx(hProcess, reinterpret_cast<void*>(vaddress), size, MEM_RELEASE);
+}
+
+uint32_t Allocate(size_t size, uint32_t vaddress)
+{
+    return reinterpret_cast<uint32_t>(VirtualAllocEx(hProcess, reinterpret_cast<void*>(vaddress), size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
+}
+
+bool MemAlloc(size_t size)
+{
+    alloc_offset = 0;
+    alloc_size = size;
+    alloc_map.clear();
+    return (alloc_base = Allocate(size, 0)) != 0;
+}
+
+bool AttemptAttach(const char *window, const char *process)
+{
+    if ((hWnd = FindWindowA(0, window)))
+    {
+        if (hProcess)
+            Free(alloc_base, alloc_size);
+        procId = 0;
+        GetWindowThreadProcessId(hWnd, &procId);
+        if ((hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, FALSE, procId)))
+        {
+            base = GetModuleBase(process);
+            MemAlloc(0x1000);
+            return true;
+        }
+    }
+    return false;
+}
+template<class T>
+bool Write(uint32_t vaddress, const T& value) { return WriteProcessMemory(hProcess, reinterpret_cast<void*>(vaddress), &value, sizeof(T), NULL); }
+bool WriteJump(uint32_t vaddress, uint32_t to) { return Write(vaddress, '\xE9') && Write(vaddress + 1, to - vaddress - 5); }
+
+bool WriteB(uint32_t vaddress, const void *bytes, size_t size)
+{
+    return WriteProcessMemory(hProcess, reinterpret_cast<void*>(vaddress), bytes, size, NULL);
+}
+
+const char * filter = "Dynamic link library (*.dll)\0*.dll";
+
 
 void WriteBytes(void* location, std::vector<BYTE> bytes) {
 	DWORD old_prot;
@@ -168,6 +310,64 @@ void WriteBytes(void* location, std::vector<BYTE> bytes) {
 	memcpy(location, bytes.data(), bytes.size());
 
 	VirtualProtect(location, bytes.size(), old_prot, &old_prot);
+}
+
+void setColors()
+{
+    // ImGui::GetIO().Fonts->AddFontFromFileTTF("../data/Fonts/Ruda-Bold.ttf", 15.0f, &config);
+    ImGui::GetStyle().FrameRounding = 4.0f;
+    ImGui::GetStyle().GrabRounding = 4.0f;
+    
+    ImVec4* colors = ImGui::GetStyle().Colors;
+    colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
+    colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
+    colors[ImGuiCol_WindowBg] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+    colors[ImGuiCol_ChildBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
+    colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
+    colors[ImGuiCol_Border] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
+    colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_FrameBg] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.12f, 0.20f, 0.28f, 1.00f);
+    colors[ImGuiCol_FrameBgActive] = ImVec4(0.09f, 0.12f, 0.14f, 1.00f);
+    colors[ImGuiCol_TitleBg] = ImVec4(0.09f, 0.12f, 0.14f, 0.65f);
+    colors[ImGuiCol_TitleBgActive] = ImVec4(0.08f, 0.10f, 0.12f, 1.00f);
+    colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
+    colors[ImGuiCol_MenuBarBg] = ImVec4(0.15f, 0.18f, 0.22f, 1.00f);
+    colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.39f);
+    colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+    colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.18f, 0.22f, 0.25f, 1.00f);
+    colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.09f, 0.21f, 0.31f, 1.00f);
+    colors[ImGuiCol_CheckMark] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
+    colors[ImGuiCol_SliderGrab] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
+    colors[ImGuiCol_SliderGrabActive] = ImVec4(0.37f, 0.61f, 1.00f, 1.00f);
+    colors[ImGuiCol_Button] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+    colors[ImGuiCol_ButtonHovered] = ImVec4(0.28f, 0.56f, 1.00f, 1.00f);
+    colors[ImGuiCol_ButtonActive] = ImVec4(0.06f, 0.53f, 0.98f, 1.00f);
+    colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.29f, 0.55f);
+    colors[ImGuiCol_HeaderHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+    colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+    colors[ImGuiCol_Separator] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+    colors[ImGuiCol_SeparatorHovered] = ImVec4(0.10f, 0.40f, 0.75f, 0.78f);
+    colors[ImGuiCol_SeparatorActive] = ImVec4(0.10f, 0.40f, 0.75f, 1.00f);
+    colors[ImGuiCol_ResizeGrip] = ImVec4(0.26f, 0.59f, 0.98f, 0.25f);
+    colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.67f);
+    colors[ImGuiCol_ResizeGripActive] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
+    colors[ImGuiCol_Tab] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+    colors[ImGuiCol_TabHovered] = ImVec4(0.26f, 0.59f, 0.98f, 0.80f);
+    colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+    colors[ImGuiCol_TabUnfocused] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+    colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.11f, 0.15f, 0.17f, 1.00f);
+    colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
+    colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
+    colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
+    colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
+    colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
+    colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
+    colors[ImGuiCol_NavHighlight] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+    colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
+    colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
+    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+
 }
 
 
@@ -222,27 +422,6 @@ namespace SpeedhackAudio {
 }
 
 
-uint32_t GetModuleBase(const char *module)
-{
-    static const int size = 0x1000;
-    DWORD out;
-    HMODULE hmods[size];
-    if (EnumProcessModulesEx(GetCurrentProcess(), hmods, 0x1000, &out, LIST_MODULES_ALL))
-    {
-        for (uint32_t i = 0; i < out / 4; ++i)
-        {
-            char path[MAX_PATH];
-            if (GetModuleBaseNameA(GetCurrentProcess(), hmods[i], path, MAX_PATH))
-            {
-                if (!strcmp(path, module))
-                    return reinterpret_cast<uint32_t>(hmods[i]);
-            }
-        }
-    }
-    return 0;
-}
-
-uint32_t cocosBase = GetModuleBase("libcocos2d.dll");
 
 void saveHacks()
 {
@@ -251,7 +430,6 @@ void saveHacks()
 		fwrite(&setting, sizeof(setting), 1, file);
 		fclose(file);
 	}
-
 }
 
 void loadHacks(){
@@ -289,7 +467,12 @@ std::string chooseDLL() //dll
     ofn.lpstrFile = fileName;
     ofn.nMaxFile = MAX_PATH;
     if (GetOpenFileName(&ofn))
+	{
         return fileName;
+	} else {
+		return nofilename;
+	}
+
 }
 
 std::string getAccuracyText() {
@@ -305,6 +488,7 @@ std::string getFramerateText(){
 	stream2 << round(ImGui::GetIO().Framerate)<< " FPS";
 	return stream2.str();
 }
+
 
 namespace PlayLayer {
 
@@ -368,7 +552,7 @@ void __fastcall LoadingLayer::initHook(cocos2d::CCLayer* _layer, void*, char _bo
 }
 
 void LoadingLayer::mem_init() {
-	MH_Initialize();
+	
 
 	size_t base = reinterpret_cast<size_t>(GetModuleHandle(0));
 	MH_CreateHook(
@@ -510,7 +694,7 @@ int __fastcall PlayLayer::resetHook(void* self) {
 }
 
 void PlayLayer::mem_init() {
-	MH_Initialize();
+	
 
 	size_t base = reinterpret_cast<size_t>(GetModuleHandle(0));
 	MH_CreateHook(
@@ -555,6 +739,8 @@ void PlayLayer::mem_init() {
 
 
 void checkHacks(){
+
+
 	if (setting.NoClipEnabled){
 	WriteBytes((void*)(gd::base + 0x20A23C), {0xE9, 0x79, 0x06, 0x00, 0x00});
 	} else {
@@ -904,19 +1090,48 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x1FCF38), { 0x05 });
 		WriteBytes((void*)(gd::base + 0x1FCF6B), { 0x00 });
 	}
+	// WriteBytes((void*)(gd::base + cocosBase), )
 }
 
-	
+std::filesystem::path get_executable_path()
+{
+    char szFilePath[MAX_PATH + 1] = { 0 };
+    GetModuleFileNameA(NULL, szFilePath, MAX_PATH);
+    return szFilePath;
+}
+
+std::filesystem::path get_executable_directory()
+{
+    return get_executable_path().parent_path();
+}
+
+static void loadMods()
+{
+	const auto base_path = get_executable_directory() / TEXT("addons");
+	if (!std::filesystem::is_directory(base_path) || !std::filesystem::exists(base_path))
+	{
+		std::filesystem::create_directory(base_path);
+	}
+	if (!std::filesystem::is_directory(base_path) || !std::filesystem::exists(base_path))
+	{
+		std::filesystem::create_directory(base_path);
+	}
+	for (const auto& file : std::filesystem::directory_iterator(base_path))
+	{
+		LoadLibrary(file.path().LOADER_STR().c_str());
+	}
+}
 
 
 static void ShowPlayerHacks(){
-	ImGui::Begin("Player", NULL, ImGuiWindowFlags_NoMove);
+	ImGui::Begin("Player", NULL, ImGuiWindowFlags_NoResize);
 	
-	ImGui::SetWindowSize(ImVec2(210, 380));
-	
-	ImGui::SetWindowPos(ImVec2(10, 10));
-
-
+	if (sortPlayer)
+	{
+		ImGui::SetWindowSize(ImVec2(210, 380));
+		ImGui::SetWindowPos(ImVec2(10, 10));
+		sortPlayer = false;
+	}
 	ImGui::Checkbox("NoClip", &setting.NoClipEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Makes the player invincible. (Safe patch.)");
@@ -941,7 +1156,7 @@ static void ShowPlayerHacks(){
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Allows for jumping in mid-air.");
 
-	ImGui::Checkbox("Force Trail State", &setting.ForceTrailStateEnabled);
+	ImGui::Checkbox("Trail Always On", &setting.ForceTrailStateEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Sets the trail to always on.");
 
@@ -996,10 +1211,14 @@ static void ShowPlayerHacks(){
 
 }
 static void ShowCreatorHacks(){
-	ImGui::Begin("Creator", NULL, ImGuiWindowFlags_NoMove);
+	ImGui::Begin("Creator", NULL, ImGuiWindowFlags_NoResize);
+	if (sortCreator)
+	{
+		ImGui::SetWindowSize(ImVec2(210, 400));
+		ImGui::SetWindowPos(ImVec2(230, 10));
+		sortCreator = false;
+	}
 
-	ImGui::SetWindowSize(ImVec2(210, 400));
-	ImGui::SetWindowPos(ImVec2(230, 10));
 
 	ImGui::Checkbox("Copy Hack", &setting.CopyHackEnabled);
 	if (ImGui::IsItemHovered())
@@ -1072,9 +1291,16 @@ static void ShowGlobalHacks(){
 		return;
 }
 static void ShowBypassHacks(){
-	ImGui::Begin("Bypass", NULL, ImGuiWindowFlags_NoMove);
-	ImGui::SetWindowSize(ImVec2(210, 430));
-	ImGui::SetWindowPos(ImVec2(450, 10));
+	ImGui::Begin("Bypass", NULL, ImGuiWindowFlags_NoResize);
+
+
+	if (sortBypass)
+	{
+		ImGui::SetWindowSize(ImVec2(210, 430));
+		ImGui::SetWindowPos(ImVec2(450, 10));
+		sortBypass = false;
+	}
+	
 	ImGui::Checkbox("Icons", &setting.IconsEnabled);
 	if (ImGui::IsItemHovered())
 	ImGui::SetTooltip("Unlocks all icons.");
@@ -1129,9 +1355,15 @@ static void ShowBypassHacks(){
 	ImGui::End();
 }
 static void ShowSpeedhack(){
-	ImGui::Begin("Speedhack", NULL, ImGuiWindowFlags_NoMove);
-	ImGui::SetWindowSize(ImVec2(210, 110));
-	ImGui::SetWindowPos(ImVec2(10, 400));
+	ImGui::Begin("Speedhack", NULL, ImGuiWindowFlags_NoResize);
+
+	if (sortSpeedhack)
+	{
+		ImGui::SetWindowSize(ImVec2(210, 110));
+		ImGui::SetWindowPos(ImVec2(10, 400));
+		sortSpeedhack = false;
+	}
+
 	
 	if (GetAsyncKeyState(VK_F2) & 5)
 	{
@@ -1157,10 +1389,14 @@ static void ShowSpeedhack(){
 	ImGui::End();
 }
 static void ShowFPSBypass(){
-	ImGui::Begin("FPS Bypass", NULL, ImGuiWindowFlags_NoMove);
-	ImGui::SetWindowSize(ImVec2(210, 80));
-	ImGui::SetWindowPos(ImVec2(230, 420));
+	ImGui::Begin("FPS Bypass", NULL, ImGuiWindowFlags_NoResize);
 
+	if (sortFPSBypass)
+	{
+		ImGui::SetWindowSize(ImVec2(210, 80));
+		ImGui::SetWindowPos(ImVec2(230, 420));
+		sortFPSBypass = false;
+	}
 	ImGui::InputFloat("FPS", &setting.interval, 10.f, 20.f, "%.1f");
 	ImGui::Checkbox("Enabled", &setting.FPSBypassEnabled);
 
@@ -1168,28 +1404,73 @@ static void ShowFPSBypass(){
 }
 
 static void ShowStatus(){
-	ImGui::Begin("Status", NULL, ImGuiWindowFlags_NoMove);
-	ImGui::SetWindowSize(ImVec2(210, 84));
-	ImGui::SetWindowPos(ImVec2(670, 10));
+	ImGui::Begin("Status", NULL, ImGuiWindowFlags_NoResize);
+
+	if (sortStatus)
+	{
+		ImGui::SetWindowSize(ImVec2(210, 114));
+		ImGui::SetWindowPos(ImVec2(670, 10));
+		sortStatus = false;
+	}
+
 	ImGui::Checkbox("Enable NoClip Accuracy", &setting.NoClipAccEnabled);
 	ImGui::Checkbox("Enable FPS Counter", &setting.FPSCounterEnabled);
-	/* if (ImGui::Button("Inject Dll")) {
-    std::string stringpath = chooseDLL();
-    const char* DllPath = stringpath.c_str();
-    HWND hWnd = FindWindow(0, "Geometry Dash");
-        DWORD proccess_ID;
-        GetWindowThreadProcessId(hWnd, &proccess_ID);
-        HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, proccess_ID);
-        LPVOID pDllPath = VirtualAllocEx(hProcess, 0, strlen(DllPath) + 1,
-        MEM_COMMIT, PAGE_READWRITE);
-        WriteProcessMemory(hProcess, pDllPath, (LPVOID)DllPath,
-        strlen(DllPath) + 1, 0);
-        HANDLE hLoadThread = CreateRemoteThread(hProcess, 0, 0,
-        (LPTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandleA("Kernel32.dll"), "LoadLibraryA"), pDllPath, 0, 0);
-        WaitForSingleObject(hLoadThread, INFINITE);     
-		VirtualFreeEx(hProcess, pDllPath, strlen(DllPath) + 1, MEM_RELEASE);
-	} */
 	ImGui::End();
+}
+
+
+
+static void ShowOther()
+{
+	ImGui::Begin("Other", NULL, ImGuiWindowFlags_NoResize);
+
+	if (sortOther)
+	{
+		ImGui::SetWindowSize(ImVec2(210, 140));
+		ImGui::SetWindowPos(ImVec2(670, 134));
+		sortOther = false;
+	}
+
+	
+
+	if (ImGui::TreeNode("Transition customiser")) {
+		ImGui::PushItemWidth(176.000000);
+		ImGui::Combo("t", &setting.currentTransition, transitions, IM_ARRAYSIZE(transitions));
+
+		ImGui::TreePop();
+	}
+
+	if (ImGui::TreeNode("Anti-aliasing")) 
+	{
+		ImGui::Checkbox("Enable MSAAx4", &setting.MSAAEnabled);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Requires game restart.");
+		}
+		ImGui::TreePop();
+	}
+
+	ImGui::Separator();
+
+	if (ImGui::Button("Inject Dll", {196.f,19.f})) {
+		std::string stringpath = chooseDLL();
+		if (stringpath != nofilename)
+		{
+			const char* DllPath = stringpath.c_str();
+			LoadLibraryA(DllPath);
+		}
+	}
+
+	if (ImGui::Button("Sort windows", {196.f,19.f})) {
+		sortPlayer = true;
+		sortAbout = true;
+		sortBypass = true;
+		sortCreator = true;
+		sortFPSBypass = true;
+		sortOther = true;
+		sortSpeedhack = true;
+		sortStatus = true;
+	}
 }
 
 static void ShowDeveloper(){
@@ -1213,9 +1494,15 @@ static void ShowDeveloper(){
 	
 }
 static void ShowAboutWindow(){
-	ImGui::Begin("About Mod Menu", NULL, ImGuiWindowFlags_NoMove);
-	ImGui::SetWindowSize(ImVec2(210, 200));
-	ImGui::SetWindowPos(ImVec2(670, 104));
+	ImGui::Begin("About Mod Menu", NULL, ImGuiWindowFlags_NoResize);
+
+	if (sortAbout)
+	{
+		ImGui::SetWindowSize(ImVec2(210, 200));
+		ImGui::SetWindowPos(ImVec2(890, 10));
+		sortAbout = false;
+	}
+
     ImGui::Text("Mod Menu %s", VERSION);
     ImGui::Separator();
     ImGui::Text("By Alexandr Simonov");
@@ -1224,11 +1511,14 @@ static void ShowAboutWindow(){
 	ImGui::Text("Used libraries: ");
 	ImGui::Text("ImGui: %s", ImGui::GetVersion());
 	ImGui::Text("MinHook: %s", "1.3.3");
-	ImGui::Text("SimpleIni: %s", "4.19");
 
-	if(ImGui::Button("View on GitHub"))
+	if(ImGui::Button("View on GitHub", {196.f,19.f}))
 	{
 		ShellExecute(0, 0, LPCSTR("https://github.com/OneParsec/GD-ModMenu"), 0, 0 , SW_SHOW );
+	}
+	if(ImGui::Button("View license", {196.f,19.f}))
+	{
+		ShellExecute(0, 0, LPCSTR("https://github.com/OneParsec/GD-ModMenu/blob/main/LICENSE"), 0, 0 , SW_SHOW );
 	}
 }
 
@@ -1249,12 +1539,20 @@ static void disableAnticheat()
 
 void MainWindow()
 {	
+	AttemptAttach("Geometry Dash", "GeometryDash.exe");
+	if (setting.currentTransition == 0)
+	{
+		WriteBytes((void*)(cocosBase + transitionaddr[0]), {0x55,0x8B,0xEC,0x6A,0xFF});
+	} else {
+		WriteJump(cocosBase + transitionaddr[0], cocosBase + transitionaddr[setting.currentTransition]);
+	}
 	ShowPlayerHacks();
 	ShowCreatorHacks();
 	ShowBypassHacks();
 	ShowSpeedhack();
 	ShowFPSBypass();
 	ShowStatus();
+	ShowOther();
 	ShowAboutWindow();
 	if (DEVELOPER_MODE)
 	{
@@ -1272,6 +1570,7 @@ void MainThread()
 	LoadingLayer::mem_init();
 	PlayLayer::mem_init();
 	checkHacks();
+	setColors();
 	disableAnticheat();
 	DEVMODE dm;
 	EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm);
@@ -1296,7 +1595,13 @@ BOOL WINAPI DllMain(HMODULE hMod, DWORD dwReason, LPVOID lpReserved)
 	{
 	case DLL_PROCESS_ATTACH:
 		DisableThreadLibraryCalls(hMod);
+		MH_Initialize();
 		loadHacks();
+		if (setting.MSAAEnabled)
+		{
+			loadMSAA();
+		}
+		loadMods();
 		ImGuiHook::Load(MainThread);
 		break;
 	case DLL_PROCESS_DETACH:
