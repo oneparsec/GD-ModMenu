@@ -3,6 +3,10 @@ name: CMake
 on:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -32,15 +36,15 @@ jobs:
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target ModMenu
       
-      
-    - name: Deploy Windows release
-        uses: WebFreak001/deploy-nightly@v1.1.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # automatically provided by github actions
-        with:
-          upload_url: https://uploads.github.com/repos/Pure-D/serve-d/releases/20717582/assets{?name,label} # find out this value by opening https://api.github.com/repos/<owner>/<repo>/releases in your browser and copy the full "upload_url" value including the {?name,label} part
-          release_id: 20717582 # same as above (id can just be taken out the upload_url, it's used to find old releases)
-          asset_path: ./myapp.zip # path to archive to upload
-          asset_name: myapp_windows-nightly-$$.zip # name to upload the release as, use $$ to insert date (YYYYMMDD) and 6 letter commit hash
-          asset_content_type: application/zip # required by GitHub API
-          max_releases: 7 # optional, if there are more releases than this matching the asset_name, the oldest ones are going to be deleted
+    - name: Deploy Nightly
+      uses: WebFreak001/deploy-nightly@v1.1.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # automatically provided by github actions
+      with:
+        upload_url: https://uploads.github.com/repos/OneParsec/GD-ModMenu/releases/65191047/assets{?name,label} # find out this value by opening https://api.github.com/repos/<owner>/<repo>/releases in your browser and copy the full "upload_url" value including the {?name,label} part
+        release_id: 65191047 # same as above (id can just be taken out the upload_url, it's used to find old releases)
+        asset_path: D:\a\GD-ModMenu\GD-ModMenu\build\Release\ModMenu.dll # path to archive to upload
+        asset_name: ModMenu-$$.dll # name to upload the release as, use $$ to insert date (YYYYMMDD) and 6 letter commit hash
+        asset_content_type: application/zip # required by GitHub API
+        prerelease: true
+        max_releases: 7 # optional, if there are more releases than this matching the asset_name, the oldest ones are going to be deleted
