@@ -6,15 +6,15 @@ Put xinput9_1_0.dll and ModMenu.dll to the GD executable directory. If you want 
 
 # How to build
 1. Clone the repository
-```
+```bash
 git clone https://github.com/OneParsec/GD-ModMenu --recursive
 ```
 2. Configure CMake
-```
+```bash
 cmake -G "Visual Studio 16 2019" -B build -DCMAKE_BUILD_TYPE=Release -T host=x86 -A win32
 ```
 3. Build
-```
+```bash
 cmake --build build --config Release --target ModMenu
 ```
 # Special thanks to:
