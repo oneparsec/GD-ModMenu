@@ -11,7 +11,7 @@ git clone https://github.com/OneParsec/GD-ModMenu --recursive
 ```
 2. Configure CMake
 ```bash
-cmake -G "Visual Studio 16 2019" -B build -DCMAKE_BUILD_TYPE=Release -T host=x86 -A win32
+cmake -G "Visual Studio 17 2022" -B build -DCMAKE_BUILD_TYPE=Release -T host=x86 -A win32
 ```
 3. Build
 ```bash
