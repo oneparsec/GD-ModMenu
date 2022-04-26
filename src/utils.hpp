@@ -23,10 +23,6 @@ T union_cast(U value) {
     return u.a;
 }
 
-
-
-#pragma warning( pop )
-
 template<typename T>
 static T getChild(cocos2d::CCNode* x, int i) {
     return static_cast<T>(x->getChildren()->objectAtIndex(i));
@@ -48,3 +44,17 @@ using edx_t = uintptr_t;
 
 typedef const char* nullstr_t;
 static constexpr nullstr_t nullstr = "";
+
+
+template<typename T, typename U>
+inline bool detour(const T src, const U dst, const int len) {
+	if (len < 5) return false;
+	char* _src = reinterpret_cast<char*>(src);
+	char* _dst = reinterpret_cast<char*>(dst);
+	int jmp = static_cast<int>(_dst - _src - 5);
+	unsigned long old = 0;
+	VirtualProtect(_src, len, PAGE_EXECUTE_READWRITE, &old);
+	*_src = 0xE9;
+	*reinterpret_cast<int*>(_src + 1) = jmp;
+	return VirtualProtect(_src, len, old, &old);
+}

@@ -9,8 +9,8 @@ TobyAdd
 fig
 */
 
-#define DEVELOPER_MODE TRUE
-#define VERSION "DEV_RELEASE"
+#define DEVELOPER_MODE FALSE
+#define VERSION "1.0"
 #define _CRT_SECURE_NO_WARNINGS
 
 #ifndef UNICODE
@@ -25,8 +25,6 @@ fig
 #endif
 
 #pragma comment(lib,"opengl32.lib")
-
-
 
 #include <Windows.h>
 #include <imgui_hook.h>
@@ -121,17 +119,22 @@ static struct
 	// other
 	int currentTransition;
 	bool MSAAEnabled;
-	// developer
-	bool transitionTest;
+	bool customBGEnabled = false;
+	// universal
+	bool ForceVisibilityEnabled;
+	bool NoRotationEnabled;
+	bool FreeWindowResizeEnabled;
+	bool SafeModeEnabled;
+	bool TransparentBGEnabled;
+	bool TransparentListsEnabled;
+	bool FastAltTabEnabled;
+	bool AllowLowVolumeEnabled;
 } setting;
 
 std::string nofilename = "false";
 
 const char * transitions[]{"Fade", "CrossFade", "FadeBL", "FadeDown", "FadeTR", "FadeUp", "FlipAngular", "FlipX", "FlipY", "JumpZoom", "MoveInB", "MoveInL", "MoveInR", "MoveInT", "RotoZoom", "ShrinkGrow", "SlideInB", "SlideInL", "SlideInR", "SlideInT", "SplitCols", "SplitRows", "TurnOffTiles", "ZoomFlipAngular", "ZoomFlipX", "ZoomFlipY", "PageTurn", "ProgressHorizontal", "ProgressInOut", "ProgressOutIn", "ProgressRadialCCW", "ProgressRadialCW", "ProgressVertical"};
 const std::vector<uint32_t> transitionaddr = { 0xA53D0, 0xA5320, 0xA54F0, 0xA55C0, 0xA5690, 0xA5760, 0xA5830, 0xA5950, 0xA5A70, 0xA5B90, 0xA5C40, 0xA5D10, 0xA5DE0, 0xA5EB0, 0xA5F80, 0xA6170, 0xA6240, 0xA6310, 0xA63E0, 0xA64B0, 0xA6580, 0xA6650, 0xA6720, 0xA67F0, 0xA6910, 0xA6A30, 0xA8D50, 0xA91D0, 0xA92A0, 0xA9370, 0xA9440, 0xA9510, 0xA95E0 };
-
-
-static char license[1067]= "MIT License\nCopyright (c) 2022 Alexandr Simonov\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the ""Software""), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.";
 
 int totalClicks = 0;
 int midClickCount = 0, actualClickCount = 0;
@@ -141,6 +144,7 @@ bool sortPlayer = true;
 bool sortBypass = true;
 bool sortSpeedhack = true;
 bool sortFPSBypass = true;
+bool sortUniversal = true;
 bool sortCreator = true;
 bool sortStatus = true;
 bool sortOther = true;
@@ -168,6 +172,7 @@ static struct {
 	bool inTestmode;
 	int smoothOut;
 } startposFix;
+
 
 using namespace cocos2d;
 using namespace std;
@@ -253,7 +258,6 @@ uint32_t GetModuleBase(const char *module)
     }
     return 0;
 }
-
 uint32_t cocosBase = GetModuleBase("libcocos2d.dll");
 
 bool Free(uint32_t vaddress, size_t size)
@@ -301,6 +305,7 @@ bool WriteB(uint32_t vaddress, const void *bytes, size_t size)
 }
 
 const char * filter = "Dynamic link library (*.dll)\0*.dll";
+const char * filter2 = "JPEG image (*.jpg)\0*.jpg";
 
 
 void WriteBytes(void* location, std::vector<BYTE> bytes) {
@@ -475,6 +480,25 @@ std::string chooseDLL() //dll
 
 }
 
+
+std::string choosePic() //dll
+{
+    OPENFILENAME ofn2;
+    char fileName[MAX_PATH] = "";
+    ZeroMemory(&ofn2, sizeof(ofn2));
+	ofn2.lpstrFilter = filter2;
+    ofn2.lStructSize = sizeof(OPENFILENAME);
+    ofn2.lpstrFile = fileName;
+    ofn2.nMaxFile = MAX_PATH;
+    if (GetOpenFileName(&ofn2))
+	{
+        return fileName;
+	} else {
+		return nofilename;
+	}
+
+}
+
 std::string getAccuracyText() {
 	if (noclipacc.frames == 0) return "Accuracy: 100.00%";
 	float p = (float)(noclipacc.frames - noclipacc.deaths) / (float)noclipacc.frames;
@@ -489,7 +513,6 @@ std::string getFramerateText(){
 	return stream2.str();
 }
 
-
 namespace PlayLayer {
 
 	inline bool(__thiscall* pushButton)(void* self, int state, bool player);
@@ -501,8 +524,8 @@ namespace PlayLayer {
 	inline int(__thiscall* death)(void* self, void* go, void* powerrangers);
 	int __fastcall deathHook(void* self, void*, void* go, void* powerrangers);
 
-	inline bool(__thiscall* init)(CCLayer* self, void* GJGameLevel);
-	bool __fastcall initHook(CCLayer* self, int edx, void* GJGameLevel);
+	inline bool(__thiscall* init)(gd::PlayLayer* self, void* GJGameLevel);
+	bool __fastcall initHook(gd::PlayLayer* self, int edx, void* GJGameLevel);
 
 	inline void(__thiscall* togglePractice)(void* self, bool practice);
 	void __fastcall togglePracticeHook(void* self, int edx, bool practice);
@@ -511,7 +534,7 @@ namespace PlayLayer {
 	void __fastcall updateHook(cocos2d::CCLayer* self, void*, float delta);
 
 	inline int(__thiscall* resetLevel)(void* self);
-	int __fastcall resetHook(void* self);
+	int __fastcall resetHook(gd::PlayLayer* self);
 
 	void mem_init();
 
@@ -562,9 +585,7 @@ void LoadingLayer::mem_init() {
 	);
 	MH_EnableHook(MH_ALL_HOOKS);
 }
-
-
-bool __fastcall PlayLayer::initHook(CCLayer* self, int edx, void* GJGameLevel) {
+bool __fastcall PlayLayer::initHook(gd::PlayLayer* self, int edx, void* GJGameLevel) {
 	size_t base = (size_t)GetModuleHandle(0);
 	totalClicks = 0;
 	noclipacc.prevX = 0;
@@ -572,7 +593,10 @@ bool __fastcall PlayLayer::initHook(CCLayer* self, int edx, void* GJGameLevel) {
 	startposFix.inPractice = false;
 	startposFix.inTestmode = *(bool*)((uintptr_t)self + 0x494);
 	startposFix.smoothOut = 0;
-
+	
+	const auto win_size = CCDirector::sharedDirector()->getWinSize();
+	//void* player1 = *(void**)((char*)self + 0x224);
+	//fromPercent.xPos = *(float*)((size_t)player1 + 0x67c);
 	//CCLabelBMFont* textObj = (CCLabelBMFont*)self->getChildByTag(4000);
 	//CCLabelBMFont* textObj2 = (CCLabelBMFont*)self->getChildByTag(4001);
 
@@ -591,7 +615,19 @@ bool __fastcall PlayLayer::initHook(CCLayer* self, int edx, void* GJGameLevel) {
 	size = textObj2->getScaledContentSize();
 	textObj2->setPosition({ size.width / 2 + 3, size.height / 2 + 3});
 	self->addChild(textObj2);
-	
+
+	/*
+	CCLabelBMFont* textObj3 = CCLabelBMFont::create("hi", "goldFont.fnt");
+	textObj3->setZOrder(1000);
+	textObj3->setTag(4002);
+	textObj3->setScale(0.5);
+	size = textObj3->getScaledContentSize();
+	textObj3->setPosition({win_size.width / 2, win_size.height / 2});
+	self->addChild(textObj3);
+	*/
+	// void* player1 = *(void**)((char*)self + 0x224);
+	//fromPercent.xPos = *(float*)((size_t)player1 + 0x67c);
+	// fromPercent.xPos = self->m_pPlayer1->m_position.x;
 	return init(self, GJGameLevel);
 }
 
@@ -678,7 +714,7 @@ void __fastcall PlayLayer::updateHook(cocos2d::CCLayer* self, void* edx, float d
 	return update(self, time);
 }
 
-int __fastcall PlayLayer::resetHook(void* self) {
+int __fastcall PlayLayer::resetHook(gd::PlayLayer* self) {
 	void* player1 = *(void**)((char*)self + 0x224);
 	noclipacc.prevX = *(float*)((size_t)player1 + 0x67c);
 	noclipacc.frames = 0;
@@ -1090,8 +1126,125 @@ void checkHacks(){
 		WriteBytes((void*)(gd::base + 0x1FCF38), { 0x05 });
 		WriteBytes((void*)(gd::base + 0x1FCF6B), { 0x00 });
 	}
-	// WriteBytes((void*)(gd::base + cocosBase), )
-}
+	if(setting.ForceVisibilityEnabled){
+		WriteBytes((void*)(cocosBase + 0x60753), {0xB0, 0x01, 0x90, });
+		WriteBytes((void*)(cocosBase + 0x60C5A), {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, });
+	} else {
+		WriteBytes((void*)(cocosBase + 0x60753), {0x8A, 0x45, 0x08, });
+		WriteBytes((void*)(cocosBase + 0x60C5A), {0x0F, 0x84, 0xCB, 0x00, 0x00, 0x00, });
+	}
+	if(setting.NoRotationEnabled){
+		WriteBytes((void*)(cocosBase + 0x60554), {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, });
+	} else {
+		WriteBytes((void*)(cocosBase + 0x60554), {0xF3, 0x0F, 0x11, 0x49, 0x24, 0xF3, 0x0F, 0x11, 0x49, 0x20, });
+	}
+	if(setting.FreeWindowResizeEnabled){
+		WriteBytes((void*)(cocosBase + 0x11388B), {0x90, 0x90, 0x90, 0x90, 0x90, });
+		WriteBytes((void*)(cocosBase + 0x11339D), {0xB9, 0xFF, 0xFF, 0xFF, 0x7F, 0x90, 0x90, });
+		WriteBytes((void*)(cocosBase + 0x1133C0), {0x48, });
+		WriteBytes((void*)(cocosBase + 0x1133C6), {0x48, });
+		WriteBytes((void*)(cocosBase + 0x112536), {0xEB, 0x11, 0x90, });	
+	} else {
+		WriteBytes((void*)(cocosBase + 0x11388B), {0xE8, 0xB0, 0xF3, 0xFF, 0xFF, });
+		WriteBytes((void*)(cocosBase + 0x11339D), {0xE8, 0xEE, 0xF6, 0xFF, 0xFF, 0x8B, 0xC8, });
+		WriteBytes((void*)(cocosBase + 0x1133C0), {0x50, });
+		WriteBytes((void*)(cocosBase + 0x1133C6), {0x50, });
+		WriteBytes((void*)(cocosBase + 0x112536), {0x50, 0x6A, 0x00, });
+	}
+	if(setting.SafeModeEnabled){
+		WriteBytes((void*)(gd::base + 0x20A3D1), {0xE9, 0x7B, 0x01, 0x00, 0x00, 0x90, });
+		WriteBytes((void*)(gd::base + 0x1FF80B), {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, });
+	} else {
+		WriteBytes((void*)(gd::base + 0x20A3D1), {0x0F, 0x85, 0x7A, 0x01, 0x00, 0x00, });
+		WriteBytes((void*)(gd::base + 0x1FF80B), {0x7D, 0x0C, 0xE9, 0xC2, 0xFB, 0xFF, 0xFF, });
+	}
+	if(setting.TransparentBGEnabled){
+		WriteBytes((void*)(gd::base + 0x15A174), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x15A175), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x15A16F), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x15A16D), {0x90, 0xB1, });
+		WriteBytes((void*)(gd::base + 0x15891D), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x15891E), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x158917), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x158915), {0x90, 0xB1, });
+		WriteBytes((void*)(gd::base + 0x6F7FB), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x6F7FC), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x6F7F6), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x6F7F4), {0x90, 0xB1, });
+		WriteBytes((void*)(gd::base + 0x1979AD), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x1979AE), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x1979A7), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x1979A5), {0x90, 0xB1, });
+		WriteBytes((void*)(gd::base + 0x17DBC1), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x17DBC2), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x17DBBB), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x17DBB9), {0x90, 0xB1, });
+		WriteBytes((void*)(gd::base + 0x176032), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x176033), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x176036), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x176034), {0x90, 0xB1, });
+		WriteBytes((void*)(gd::base + 0x4DF7E), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x4DF7F), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x4DF78), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x4DF76), {0x90, 0xB1, });
+	} else {
+		WriteBytes((void*)(gd::base + 0x15A174), {0x00, });
+		WriteBytes((void*)(gd::base + 0x15A175), {0x66, });
+		WriteBytes((void*)(gd::base + 0x15A16F), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x15A16D), {0x80, 0xC9, });
+		WriteBytes((void*)(gd::base + 0x15891D), {0x00, });
+		WriteBytes((void*)(gd::base + 0x15891E), {0x66, });
+		WriteBytes((void*)(gd::base + 0x158917), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x158915), {0x80, 0xC9, });
+		WriteBytes((void*)(gd::base + 0x6F7FB), {0x00, });
+		WriteBytes((void*)(gd::base + 0x6F7FC), {0x66, });
+		WriteBytes((void*)(gd::base + 0x6F7F6), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x6F7F4), {0x80, 0xC9, });
+		WriteBytes((void*)(gd::base + 0x1979AD), {0x00, });
+		WriteBytes((void*)(gd::base + 0x1979AE), {0x66, });
+		WriteBytes((void*)(gd::base + 0x1979A7), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x1979A5), {0x80, 0xC9, });
+		WriteBytes((void*)(gd::base + 0x17DBC1), {0x00, });
+		WriteBytes((void*)(gd::base + 0x17DBC2), {0x66, });
+		WriteBytes((void*)(gd::base + 0x17DBBB), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x17DBB9), {0x80, 0xC9, });
+		WriteBytes((void*)(gd::base + 0x176032), {0x00, });
+		WriteBytes((void*)(gd::base + 0x176033), {0x66, });
+		WriteBytes((void*)(gd::base + 0x176036), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x176034), {0x80, 0xC9, });
+		WriteBytes((void*)(gd::base + 0x4DF7E), {0x00, });
+		WriteBytes((void*)(gd::base + 0x4DF7F), {0x66, });
+		WriteBytes((void*)(gd::base + 0x4DF78), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x4DF76), {0x80, 0xC9, });
+	}
+	if(setting.TransparentListsEnabled){
+		WriteBytes((void*)(gd::base + 0x15C02C), {0x00, 0x00, 0x00, 0x40, });
+		WriteBytes((void*)(gd::base + 0x5C70A), {0x60, });
+		WriteBytes((void*)(gd::base + 0x5C6D9), {0x20, 0x20, });
+		WriteBytes((void*)(gd::base + 0x5C6DC), {0x20, });
+		WriteBytes((void*)(gd::base + 0x5C6CF), {0x40, 0x40, });
+		WriteBytes((void*)(gd::base + 0x5C6D2), {0x40, });
+	} else {
+		WriteBytes((void*)(gd::base + 0x15C02C), {0xBF, 0x72, 0x3E, 0xFF, });
+		WriteBytes((void*)(gd::base + 0x5C70A), {0xFF, });
+		WriteBytes((void*)(gd::base + 0x5C6D9), {0xA1, 0x58, });
+		WriteBytes((void*)(gd::base + 0x5C6DC), {0x2C, });
+		WriteBytes((void*)(gd::base + 0x5C6CF), {0xC2, 0x72, });
+		WriteBytes((void*)(gd::base + 0x5C6D2), {0x3E, });
+	}
+	if(setting.FastAltTabEnabled){
+		WriteBytes((void*)(gd::base + 0x3D02E), {0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, });
+	} else {
+		WriteBytes((void*)(gd::base + 0x3D02E), {0x8B, 0x03, 0x8B, 0xCB, 0xFF, 0x50, 0x18, });
+	}
+	if(setting.AllowLowVolumeEnabled){
+		WriteBytes((void*)(gd::base + 0x1E5D7F), {0xEB, 0x08, });
+		WriteBytes((void*)(gd::base + 0x1DDEC1), {0xEB, 0x08, });
+	} else {
+		WriteBytes((void*)(gd::base + 0x1E5D7F), {0x76, 0x08, });
+		WriteBytes((void*)(gd::base + 0x1DDEC1), {0x76, 0x08, });
+	}
+};
 
 std::filesystem::path get_executable_path()
 {
@@ -1409,7 +1562,7 @@ static void ShowStatus(){
 	if (sortStatus)
 	{
 		ImGui::SetWindowSize(ImVec2(210, 114));
-		ImGui::SetWindowPos(ImVec2(670, 10));
+		ImGui::SetWindowPos(ImVec2(890, 10));
 		sortStatus = false;
 	}
 
@@ -1418,7 +1571,41 @@ static void ShowStatus(){
 	ImGui::End();
 }
 
+static void ShowUniversal()
+{
+	ImGui::Begin("Universal", NULL, ImGuiWindowFlags_NoResize);
 
+	if (sortUniversal)
+	{
+		ImGui::SetWindowSize(ImVec2(210, 280));
+		ImGui::SetWindowPos(ImVec2(670, 10));
+		sortUniversal = false;
+	}
+	ImGui::Checkbox("Force Visibility", &setting.ForceVisibilityEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Sets all nodes to be visible.");
+	ImGui::Checkbox("No Rotation", &setting.NoRotationEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Locks all rotation at 0 degrees.");
+	ImGui::Checkbox("Free Window Resize", &setting.FreeWindowResizeEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Removes limits in place for window resizing.");
+	ImGui::Checkbox("Safe Mode", &setting.SafeModeEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Disables progress, completion & verification of levels.");
+	ImGui::Checkbox("Transparent BG", &setting.TransparentBGEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Removes the blue filter from menu's backgrounds. By WEGFan");
+	ImGui::Checkbox("Transparent Lists", &setting.TransparentListsEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Makes the menu lists transparent. By WEGFan");
+	ImGui::Checkbox("Fast Alt-Tab", &setting.FastAltTabEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Disables savefile saving on minimize. By PoweredByPie");
+	ImGui::Checkbox("Allow Low Volume", &setting.AllowLowVolumeEnabled);
+	if (ImGui::IsItemHovered())
+	ImGui::SetTooltip("Removed snapping to 0.00 setting volume to 0.03");
+}
 
 static void ShowOther()
 {
@@ -1427,7 +1614,7 @@ static void ShowOther()
 	if (sortOther)
 	{
 		ImGui::SetWindowSize(ImVec2(210, 140));
-		ImGui::SetWindowPos(ImVec2(670, 134));
+		ImGui::SetWindowPos(ImVec2(890, 134));
 		sortOther = false;
 	}
 
@@ -1439,6 +1626,14 @@ static void ShowOther()
 
 		ImGui::TreePop();
 	}
+
+	/*
+	if (ImGui::TreeNode("Background customiser")) {
+		ImGui::PushItemWidth(176.000000);
+		ImGui::Checkbox("Enabled", &setting.customBGEnabled);
+		ImGui::Text("Put jpg image in the GD/Resources/background.jpg");
+		ImGui::TreePop();
+	} */
 
 	if (ImGui::TreeNode("Anti-aliasing")) 
 	{
@@ -1469,6 +1664,7 @@ static void ShowOther()
 		sortFPSBypass = true;
 		sortOther = true;
 		sortSpeedhack = true;
+		sortUniversal = true;
 		sortStatus = true;
 	}
 }
@@ -1490,7 +1686,7 @@ static void ShowDeveloper(){
 	
 
 	ImGui::Separator();
-	ImGui::Checkbox("Enable FPS Counter", &setting.FPSCounterEnabled);
+	
 	
 }
 static void ShowAboutWindow(){
@@ -1499,7 +1695,7 @@ static void ShowAboutWindow(){
 	if (sortAbout)
 	{
 		ImGui::SetWindowSize(ImVec2(210, 200));
-		ImGui::SetWindowPos(ImVec2(890, 10));
+		ImGui::SetWindowPos(ImVec2(1110, 10));
 		sortAbout = false;
 	}
 
@@ -1553,6 +1749,7 @@ void MainWindow()
 	ShowFPSBypass();
 	ShowStatus();
 	ShowOther();
+	ShowUniversal();
 	ShowAboutWindow();
 	if (DEVELOPER_MODE)
 	{
@@ -1569,6 +1766,7 @@ void MainThread()
 	SpeedhackAudio::init();
 	LoadingLayer::mem_init();
 	PlayLayer::mem_init();
+
 	checkHacks();
 	setColors();
 	disableAnticheat();
