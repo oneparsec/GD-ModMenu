@@ -4,7 +4,19 @@ Free, open-source Geometry Dash modification menu. Powered by ImGui.
 # How to use
 Put xinput9_1_0.dll and ModMenu.dll to the GD executable directory. If you want to add another dlls, put them to `addons` directory
 
-
+# How to build
+1. Clone the repository
+```
+git clone https://github.com/OneParsec/GD-ModMenu --recursive
+```
+2. Configure CMake
+```
+cmake -G "Visual Studio 16 2019" -B build -DCMAKE_BUILD_TYPE=Release -T host=x86 -A win32
+```
+3. Build
+```
+cmake --build build --config Release --target ModMenu
+```
 # Special thanks to:
 
 - Absolute
