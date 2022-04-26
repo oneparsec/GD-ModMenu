@@ -18,8 +18,7 @@ git clone https://github.com/OneParsec/GD-ModMenu --recursive
 ```bash
 cmake -G "Visual Studio 17 2022" -B build -DCMAKE_BUILD_TYPE=Release -T host=x86 -A win32
 ```
-
-Note: If you are using VS 2019, enter "Visual Studio 16 2019" instead of "Visual Studio 17 2022".
+*Note: If you are using VS 2019, enter "Visual Studio 16 2019" instead of "Visual Studio 17 2022".*
 
 3. Build
 ```bash
