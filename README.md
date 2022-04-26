@@ -1,11 +1,16 @@
 # GD-ModMenu
 Free, open-source Geometry Dash modification menu. Powered by ImGui.
 
-Special thanks to:
+# Special thanks to:
 
-Absolute
-Adaf
-fig
-HJFod
-matcool
-TobyAdd
+- Absolute
+
+- Adaf
+
+- fig
+
+- HJFod
+
+- matcool
+
+- TobyAdd
