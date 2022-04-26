@@ -7,6 +7,9 @@ Use `INSERT` key to call mod menu.
 Put xinput9_1_0.dll and ModMenu.dll to the GD executable directory. If you want to add other DLLs, put them in `addons` directory
 
 # How to build
+
+You will need Visual Studio (2019 or 2022), CMake and Git.
+
 1. Clone the repository
 ```bash
 git clone https://github.com/OneParsec/GD-ModMenu --recursive
@@ -15,6 +18,9 @@ git clone https://github.com/OneParsec/GD-ModMenu --recursive
 ```bash
 cmake -G "Visual Studio 17 2022" -B build -DCMAKE_BUILD_TYPE=Release -T host=x86 -A win32
 ```
+
+Note: If you are using VS 2019, enter "Visual Studio 16 2019" instead of "Visual Studio 17 2022".
+
 3. Build
 ```bash
 cmake --build build --config Release --target ModMenu
