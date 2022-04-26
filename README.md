@@ -2,7 +2,7 @@
 Free, open-source Geometry Dash modification menu. Powered by ImGui.
 
 # How to use
-Put xinput9_1_0.dll and ModMenu.dll to the GD executable directory. If you want to add another dlls, put them to `addons` directory
+Put xinput9_1_0.dll and ModMenu.dll to the GD executable directory. If you want to add other DLLs, put them in `addons` directory
 
 # How to build
 1. Clone the repository
