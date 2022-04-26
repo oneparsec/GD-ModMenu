@@ -15,13 +15,19 @@ You will need Visual Studio (2019 or 2022), CMake and Git.
 ```bash
 git clone https://github.com/OneParsec/GD-ModMenu --recursive
 ```
-2. Configure CMake
+
+2. Change directory
+```bash
+cd GD-ModMenu
+```
+
+3. Configure CMake
 ```bash
 cmake -G "Visual Studio 17 2022" -B build -DCMAKE_BUILD_TYPE=Release -T host=x86 -A win32
 ```
 *Note: If you are using VS 2019, enter "Visual Studio 16 2019" instead of "Visual Studio 17 2022".*
 
-3. Build
+4. Build
 ```bash
 cmake --build build --config Release --target ModMenu
 ```
