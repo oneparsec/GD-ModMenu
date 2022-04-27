@@ -1,7 +1,7 @@
 # GD-ModMenu
 Free, open-source Geometry Dash modification menu. Powered by ImGui.
 
-Use `INSERT` key to call mod menu.
+Press `INSERT` key to call mod menu.
 
 # How to use
 Firstly, download DLLs from release page.
