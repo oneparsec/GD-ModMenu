@@ -7,8 +7,6 @@ Press `INSERT` key to call mod menu.
 Firstly, download DLLs from release page.
 Then, put `xinput9_1_0.dll` and `ModMenu.dll` to the GD executable directory. If you want to add other DLLs, put them in `addons` directory.
 
-Currently I am working on a GUI Installer, so it will appear in future releases.
-
 # How to build
 
 You will need Visual Studio (2019 or 2022), CMake and Git.
