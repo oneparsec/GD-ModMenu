@@ -33,19 +33,13 @@ cmake --build build --config Release --target ModMenu
 ```
 # Special thanks to:
 
-- Absolute
-
-- Adaf
-
-- fig
-
-- HJFod
-
-- matcool
-
-- TobyAdd
-
-- Pixelsaft
+- [Absolute](https://github.com/absoIute)
+- [Adaf](https://github.com/adafcaefc)
+- [fig](https://github.com/FigmentBoy)
+- [HJFod](https://github.com/HJfod)
+- [matcool](https://github.com/matcool)
+- [TobyAdd](https://github.com/TobyAdd)
+- [Pixelsuft](https://github.com/Pixelsuft/)
 
 # License
 ```
