@@ -10,3 +10,6 @@
 [submodule "libraries/imgui-hook"]
 	path = libraries/imgui-hook
 	url = https://github.com/OneParsec/imgui-hook
+[submodule "libraries/imgui"]
+	path = libraries/imgui
+	url = https://github.com/ocornut/imgui

@@ -8,8 +8,7 @@ add_library(ModMenu SHARED src/main.cpp)
 
 target_include_directories(ModMenu PRIVATE
   libraries/imgui-hook
-  libraries/imgui-hook/imgui
-  libraries/.
+  libraries/imgui
   libraries/minhook/include
   libraries/cocos-headers/cocos2dx/
   libraries/cocos-headers/cocos2dx/include
