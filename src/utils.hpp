@@ -4,6 +4,8 @@
 #include <MinHook.h>
 #include <gd.h>
 
+// thanks to matcool
+
 #pragma once
 
 template <typename R, typename T>
@@ -58,3 +60,5 @@ inline bool detour(const T src, const U dst, const int len) {
 	*reinterpret_cast<int*>(_src + 1) = jmp;
 	return VirtualProtect(_src, len, old, &old);
 }
+
+

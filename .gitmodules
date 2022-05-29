@@ -7,3 +7,6 @@
 [submodule "libraries/cocos-headers"]
 	path = libraries/cocos-headers
 	url = https://github.com/HJfod/cocos-headers.git
+[submodule "libraries/imgui-hook"]
+	path = libraries/imgui-hook
+	url = https://github.com/OneParsec/imgui-hook
