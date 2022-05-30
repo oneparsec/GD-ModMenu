@@ -4,9 +4,9 @@ on:
   schedule:
     - cron: '0 2 * * *' # run at 2 AM UTC
   push:
-    branches: [ main ]
+    branches: [ nightly ]
   pull_request:
-    branches: [ main ]
+    branches: [ nightly ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -35,3 +35,9 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target ModMenu
+    
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: Windows Binary
+        path: ./build/Release
