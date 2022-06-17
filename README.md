@@ -5,7 +5,7 @@ Press `INSERT` key to call mod menu.
 
 # How to use
 Firstly, download DLLs from release page.
-Then, put `xinput9_1_0.dll` and `ModMenu.dll` to the GD executable directory. If you want to add other DLLs, put them in `addons` directory.
+Then, put `xinput9_1_0.dll` and `ModMenu.dll` to the GD executable directory. If you want to add other DLLs to be automatically loaded, put them in `addons` directory.
 
 # How to build
 
